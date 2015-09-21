@@ -810,7 +810,7 @@
         _ref1 = this.observers;
         for (key in _ref1) {
           keypath = _ref1[key];
-          	console.log(key);
+          	// console.log(key);
           this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
            
             return function(key) {
@@ -885,7 +885,6 @@
         _ref7 = this.observers;
         _results = [];
         for (key in _ref7) {
-        	console.log('key2', key);
           observer = _ref7[key];
           _results.push(this.upstreamObservers[key] = this.observe(this.componentView.models, key, ((function(_this) {
             return function(key, observer) {
