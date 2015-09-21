@@ -810,7 +810,6 @@
         _ref1 = this.observers;
         for (key in _ref1) {
           keypath = _ref1[key];
-          	// console.log(key);
           this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
            
             return function(key) {

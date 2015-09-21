@@ -55,7 +55,7 @@
         return view;
       },
       init: function(component, el, data) {
-        var scope, view;
+        var scope, template, view;
         if (data == null) {
           data = {};
         }
@@ -63,7 +63,15 @@
           el = document.createElement('div');
         }
         component = Rivets["public"].components[component];
-        el.innerHTML = component.template.call(this, el);
+        template = component.template.call(this, el);
+        if (template instanceof HTMLElement) {
+          while (el.firstChild) {
+            el.removeChild(el.firstChild);
+          }
+          el.appendChild(template);
+        } else {
+          el.innerHTML = template;
+        }
         scope = component.initialize.call(this, el, data);
         view = new Rivets.View(el, scope);
         view.bind();
@@ -805,7 +813,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var k, key, keypath, observer, option, options, scope, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
+      var content, contentView, k, key, keypath, observer, option, options, scope, template, templateContent, templateRoot, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
       if (!this.bound) {
         _ref1 = this.observers;
         for (key in _ref1) {
@@ -823,7 +831,17 @@
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
-        this.el.innerHTML = this.component.template.call(this);
+        content = document.createElement('div');
+        while (this.el.firstChild) {
+          content.appendChild(this.el.firstChild);
+        }
+        templateRoot = document.createElement('div');
+        template = this.component.template.call(this);
+        if (template instanceof HTMLElement) {
+          templateRoot.appendChild(template);
+        } else {
+          templateRoot.innerHTML = template;
+        }
         scope = this.component.initialize.call(this, this.el, this.locals());
         this.el._bound = true;
         options = {};
@@ -851,8 +869,17 @@
           option = _ref5[_j];
           options[option] = (_ref6 = this.component[option]) != null ? _ref6 : this.view[option];
         }
-        this.componentView = new Rivets.View(this.el, scope, options);
+        this.componentView = new Rivets.View(templateRoot, scope, options);
         this.componentView.bind();
+        contentView = new Rivets.View(content, this.view.models, options);
+        contentView.bind();
+        templateContent = templateRoot.getElementsByTagName('content')[0];
+        while (this.content.firstChild) {
+          templateContent.appendChild(this.content.firstChild);
+        }
+        while (templateRoot.firstChild) {
+          this.el.appendChild(templateRoot.firstChild);
+        }
         _ref7 = this.observers;
         _results = [];
         for (key in _ref7) {
