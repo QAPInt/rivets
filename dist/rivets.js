@@ -842,6 +842,9 @@
         } else {
           templateRoot.innerHTML = template;
         }
+        while (templateRoot.firstChild) {
+          this.el.appendChild(templateRoot.firstChild);
+        }
         scope = this.component.initialize.call(this, this.el, this.locals());
         this.el._bound = true;
         options = {};
@@ -874,11 +877,8 @@
         contentView = new Rivets.View(content, this.view.models, options);
         contentView.bind();
         templateContent = templateRoot.getElementsByTagName('content')[0];
-        while (this.content.firstChild) {
-          templateContent.appendChild(this.content.firstChild);
-        }
-        while (templateRoot.firstChild) {
-          this.el.appendChild(templateRoot.firstChild);
+        while (content.firstChild) {
+          templateContent.appendChild(content.firstChild);
         }
         _ref7 = this.observers;
         _results = [];

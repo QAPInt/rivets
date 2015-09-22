@@ -235,6 +235,9 @@ class Rivets.ComponentBinding extends Rivets.Binding
         templateRoot.appendChild(template)
       else
         templateRoot.innerHTML = template
+
+      while templateRoot.firstChild
+        @el.appendChild(templateRoot.firstChild)
       
       scope = @component.initialize.call @, @el, @locals()
       @el._bound = true
@@ -256,11 +259,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
       contentView.bind();
       templateContent =  templateRoot.getElementsByTagName('content')[0];
 
-      while @content.firstChild
-        templateContent.appendChild(@content.firstChild)
-
-      while templateRoot.firstChild
-        @el.appendChild(templateRoot.firstChild)
+      while content.firstChild
+        templateContent.appendChild(content.firstChild)
 
       for key, observer of @observers
         @upstreamObservers[key] = @observe @componentView.models, key, ((key, observer) => =>
