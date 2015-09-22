@@ -229,15 +229,11 @@ class Rivets.ComponentBinding extends Rivets.Binding
       while @el.firstChild
         content.appendChild(@el.firstChild)
 
-      templateRoot = document.createElement 'div'
       template = @component.template.call this
       if template instanceof HTMLElement
-        templateRoot.appendChild(template)
+        @el.appendChild(template)
       else
-        templateRoot.innerHTML = template
-
-      while templateRoot.firstChild
-        @el.appendChild(templateRoot.firstChild)
+        @el.innerHTML = template
       
       scope = @component.initialize.call @, @el, @locals()
       @el._bound = true
@@ -252,12 +248,12 @@ class Rivets.ComponentBinding extends Rivets.Binding
       for option in Rivets.options
         options[option] = @component[option] ? @view[option]
 
-      @componentView = new Rivets.View(templateRoot, scope, options)
+      @componentView = new Rivets.View(@el, scope, options)
       @componentView.bind()
 
       contentView = new Rivets.View(content, this.view.models, options);
       contentView.bind();
-      templateContent =  templateRoot.getElementsByTagName('content')[0];
+      templateContent =  @el.getElementsByTagName('content')[0];
 
       while content.firstChild
         templateContent.appendChild(content.firstChild)

@@ -813,7 +813,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var content, contentView, k, key, keypath, observer, option, options, scope, template, templateContent, templateRoot, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
+      var content, contentView, k, key, keypath, observer, option, options, scope, template, templateContent, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
       if (!this.bound) {
         _ref1 = this.observers;
         for (key in _ref1) {
@@ -835,15 +835,11 @@
         while (this.el.firstChild) {
           content.appendChild(this.el.firstChild);
         }
-        templateRoot = document.createElement('div');
         template = this.component.template.call(this);
         if (template instanceof HTMLElement) {
-          templateRoot.appendChild(template);
+          this.el.appendChild(template);
         } else {
-          templateRoot.innerHTML = template;
-        }
-        while (templateRoot.firstChild) {
-          this.el.appendChild(templateRoot.firstChild);
+          this.el.innerHTML = template;
         }
         scope = this.component.initialize.call(this, this.el, this.locals());
         this.el._bound = true;
@@ -872,11 +868,11 @@
           option = _ref5[_j];
           options[option] = (_ref6 = this.component[option]) != null ? _ref6 : this.view[option];
         }
-        this.componentView = new Rivets.View(templateRoot, scope, options);
+        this.componentView = new Rivets.View(this.el, scope, options);
         this.componentView.bind();
         contentView = new Rivets.View(content, this.view.models, options);
         contentView.bind();
-        templateContent = templateRoot.getElementsByTagName('content')[0];
+        templateContent = this.el.getElementsByTagName('content')[0];
         while (content.firstChild) {
           templateContent.appendChild(content.firstChild);
         }
