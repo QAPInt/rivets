@@ -253,12 +253,13 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       contentView = new Rivets.View(content, this.view.models, options);
       contentView.bind();
-      templateContent =  @el.getElementsByTagName('content')[0];
+      contentNode =  @el.getElementsByTagName('content')[0];
 
-      if templateContent?
+      if contentNode?
+        contentParentNode = contentNode.parentNode
         while content.firstChild
-          @el.insertBefore(content.firstChild, templateContent)
-        @el.removeChild(templateContent)
+          contentParentNode.insertBefore(content.firstChild, contentNode)
+        contentParentNode.removeChild(contentNode)
 
 
       for key, observer of @observers

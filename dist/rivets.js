@@ -813,7 +813,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var content, contentView, k, key, keypath, observer, option, options, scope, template, templateContent, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
+      var content, contentNode, contentParentNode, contentView, k, key, keypath, observer, option, options, scope, template, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
       if (!this.bound) {
         _ref1 = this.observers;
         for (key in _ref1) {
@@ -872,12 +872,13 @@
         this.componentView.bind();
         contentView = new Rivets.View(content, this.view.models, options);
         contentView.bind();
-        templateContent = this.el.getElementsByTagName('content')[0];
-        if (templateContent != null) {
+        contentNode = this.el.getElementsByTagName('content')[0];
+        if (contentNode != null) {
+          contentParentNode = contentNode.parentNode;
           while (content.firstChild) {
-            this.el.insertBefore(content.firstChild, templateContent);
+            contentParentNode.insertBefore(content.firstChild, contentNode);
           }
-          this.el.removeChild(templateContent);
+          contentParentNode.removeChild(contentNode);
         }
         _ref7 = this.observers;
         _results = [];
