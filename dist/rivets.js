@@ -873,8 +873,11 @@
         contentView = new Rivets.View(content, this.view.models, options);
         contentView.bind();
         templateContent = this.el.getElementsByTagName('content')[0];
-        while (content.firstChild) {
-          templateContent.appendChild(content.firstChild);
+        if (templateContent != null) {
+          while (content.firstChild) {
+            this.el.insertBefore(content.firstChild, templateContent);
+          }
+          this.el.removeChild(templateContent);
         }
         _ref7 = this.observers;
         _results = [];
