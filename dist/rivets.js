@@ -813,7 +813,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var content, contentNode, contentParentNode, contentView, k, key, keypath, observer, option, options, scope, template, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
+      var componentContent, componentTemplate, contentNode, contentParentNode, k, key, keypath, observer, option, options, scope, template, templateView, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
       if (!this.bound) {
         _ref1 = this.observers;
         for (key in _ref1) {
@@ -821,7 +821,7 @@
           this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
             return function(key) {
               return function() {
-                return _this.componentView.models[key] = _this.observers[key].value();
+                return scope[key] = _this.observers[key].value();
               };
             };
           })(this)).call(this, key));
@@ -831,17 +831,6 @@
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
-        content = document.createElement('div');
-        while (this.el.firstChild) {
-          content.appendChild(this.el.firstChild);
-        }
-        template = this.component.template.call(this);
-        if (template instanceof HTMLElement) {
-          this.el.appendChild(template);
-        } else {
-          this.el.innerHTML = template;
-        }
-        scope = this.component.initialize.call(this, this.el, this.locals());
         this.el._bound = true;
         options = {};
         _ref2 = Rivets.extensions;
@@ -868,26 +857,43 @@
           option = _ref5[_j];
           options[option] = (_ref6 = this.component[option]) != null ? _ref6 : this.view[option];
         }
-        this.componentView = new Rivets.View(this.el, scope, options);
+        this.componentView = new Rivets.View(this.el, this.view.models, options);
         this.componentView.bind();
-        contentView = new Rivets.View(content, this.view.models, options);
-        contentView.bind();
-        contentNode = this.el.getElementsByTagName('content')[0];
+        componentTemplate = document.createElement('div');
+        template = this.component.template.call(this);
+        if (template instanceof HTMLElement) {
+          componentTemplate.appendChild(template);
+        } else {
+          componentTemplate.innerHTML = template;
+        }
+        componentContent = document.createElement('div');
+        while (this.el.firstChild) {
+          componentContent.appendChild(this.el.firstChild);
+        }
+        this.el.appendChild(componentTemplate);
+        scope = this.component.initialize.call(this, this.el, this.locals());
+        templateView = new Rivets.View(componentTemplate, scope, options);
+        templateView.bind();
+        contentNode = componentTemplate.getElementsByTagName('content')[0];
         if (contentNode != null) {
           contentParentNode = contentNode.parentNode;
-          while (content.firstChild) {
-            contentParentNode.insertBefore(content.firstChild, contentNode);
+          while (componentContent.firstChild) {
+            contentParentNode.insertBefore(componentContent.firstChild, contentNode);
           }
           contentParentNode.removeChild(contentNode);
         }
+        while (componentTemplate.firstChild) {
+          this.el.appendChild(componentTemplate.firstChild);
+        }
+        this.el.removeChild(componentTemplate);
         _ref7 = this.observers;
         _results = [];
         for (key in _ref7) {
           observer = _ref7[key];
-          _results.push(this.upstreamObservers[key] = this.observe(this.componentView.models, key, ((function(_this) {
+          _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
             return function(key, observer) {
               return function() {
-                return observer.setValue(_this.componentView.models[key]);
+                return observer.setValue(scope[key]);
               };
             };
           })(this)).call(this, key, observer)));
