@@ -217,7 +217,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     unless @bound
       for key, keypath of @observers
         @observers[key] = @observe @view.models, keypath, ((key) => =>
-          @componentView.models[key] = @observers[key].value()
+          scope[key] = @observers[key].value()
         ).call(@, key)
 
       @bound = true
@@ -225,17 +225,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
     if @componentView?
       @componentView.bind()
     else
-      content = document.createElement 'div'
-      while @el.firstChild
-        content.appendChild(@el.firstChild)
-
-      template = @component.template.call this
-      if template instanceof HTMLElement
-        @el.appendChild(template)
-      else
-        @el.innerHTML = template
-      
-      scope = @component.initialize.call @, @el, @locals()
       @el._bound = true
 
       options = {}
@@ -248,23 +237,43 @@ class Rivets.ComponentBinding extends Rivets.Binding
       for option in Rivets.options
         options[option] = @component[option] ? @view[option]
 
-      @componentView = new Rivets.View(@el, scope, options)
+      @componentView = new Rivets.View(@el, @view.models, options)
       @componentView.bind()
 
-      contentView = new Rivets.View(content, this.view.models, options);
-      contentView.bind();
-      contentNode =  @el.getElementsByTagName('content')[0];
+      componentTemplate = document.createElement('div')
+      template = @component.template.call this
+      if template instanceof HTMLElement
+        componentTemplate.appendChild(template)
+      else
+        componentTemplate.innerHTML = template
+
+      componentContent = document.createElement 'div'
+      while @el.firstChild
+        componentContent.appendChild(@el.firstChild)
+
+      @el.appendChild(componentTemplate)
+
+      scope = @component.initialize.call @, @el, @locals()
+
+      templateView = new Rivets.View(componentTemplate, scope, options);
+      templateView.bind();
+
+      contentNode =  componentTemplate.getElementsByTagName('content')[0];
 
       if contentNode?
         contentParentNode = contentNode.parentNode
-        while content.firstChild
-          contentParentNode.insertBefore(content.firstChild, contentNode)
+        while componentContent.firstChild
+          contentParentNode.insertBefore(componentContent.firstChild, contentNode)
         contentParentNode.removeChild(contentNode)
 
+      while componentTemplate.firstChild
+        @el.appendChild(componentTemplate.firstChild);
+    
+      @el.removeChild(componentTemplate)
 
       for key, observer of @observers
-        @upstreamObservers[key] = @observe @componentView.models, key, ((key, observer) => =>
-          observer.setValue @componentView.models[key]
+        @upstreamObservers[key] = @observe scope, key, ((key, observer) => =>
+          observer.setValue scope[key]
         ).call(@, key, observer)
 
   # Intercept `Rivets.Binding::unbind` to be called on `@componentView`.
