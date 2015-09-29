@@ -758,7 +758,6 @@
     __extends(ComponentBinding, _super);
 
     function ComponentBinding(view, el, type) {
-      var attribute, bindingRegExp, propertyName, _i, _len, _ref1, _ref2;
       this.view = view;
       this.el = el;
       this.type = type;
@@ -769,19 +768,6 @@
       this["static"] = {};
       this.observers = {};
       this.upstreamObservers = {};
-      bindingRegExp = view.bindingRegExp();
-      _ref1 = this.el.attributes || [];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        attribute = _ref1[_i];
-        if (!bindingRegExp.test(attribute.name)) {
-          propertyName = this.camelCase(attribute.name);
-          if (__indexOf.call((_ref2 = this.component["static"]) != null ? _ref2 : [], propertyName) >= 0) {
-            this["static"][propertyName] = attribute.value;
-          } else {
-            this.observers[propertyName] = attribute.value;
-          }
-        }
-      }
     }
 
     ComponentBinding.prototype.sync = function() {};
@@ -813,52 +799,65 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var componentContent, componentTemplate, contentNode, contentParentNode, k, key, keypath, observer, option, options, scope, template, templateView, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _results;
-      if (!this.bound) {
-        _ref1 = this.observers;
-        for (key in _ref1) {
-          keypath = _ref1[key];
-          this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
-            return function(key) {
-              return function() {
-                return scope[key] = _this.observers[key].value();
-              };
-            };
-          })(this)).call(this, key));
-        }
-        this.bound = true;
-      }
+      var attribute, bindingRegExp, componentContent, componentTemplate, contentNode, contentParentNode, k, key, keypath, observer, option, options, propertyName, scope, template, templateView, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
         this.el._bound = true;
         options = {};
-        _ref2 = Rivets.extensions;
-        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-          option = _ref2[_i];
+        _ref1 = Rivets.extensions;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          option = _ref1[_i];
           options[option] = {};
           if (this.component[option]) {
-            _ref3 = this.component[option];
-            for (k in _ref3) {
-              v = _ref3[k];
+            _ref2 = this.component[option];
+            for (k in _ref2) {
+              v = _ref2[k];
               options[option][k] = v;
             }
           }
-          _ref4 = this.view[option];
-          for (k in _ref4) {
-            v = _ref4[k];
+          _ref3 = this.view[option];
+          for (k in _ref3) {
+            v = _ref3[k];
             if ((_base = options[option])[k] == null) {
               _base[k] = v;
             }
           }
         }
-        _ref5 = Rivets.options;
-        for (_j = 0, _len1 = _ref5.length; _j < _len1; _j++) {
-          option = _ref5[_j];
-          options[option] = (_ref6 = this.component[option]) != null ? _ref6 : this.view[option];
+        _ref4 = Rivets.options;
+        for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
+          option = _ref4[_j];
+          options[option] = (_ref5 = this.component[option]) != null ? _ref5 : this.view[option];
         }
         this.componentView = new Rivets.View(this.el, this.view.models, options);
         this.componentView.bind();
+        bindingRegExp = this.view.bindingRegExp();
+        _ref6 = this.el.attributes || [];
+        for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
+          attribute = _ref6[_k];
+          if (!bindingRegExp.test(attribute.name)) {
+            propertyName = this.camelCase(attribute.name);
+            if (__indexOf.call((_ref7 = this.component["static"]) != null ? _ref7 : [], propertyName) >= 0) {
+              this["static"][propertyName] = attribute.value;
+            } else {
+              this.observers[propertyName] = attribute.value;
+            }
+          }
+        }
+        if (!this.bound) {
+          _ref8 = this.observers;
+          for (key in _ref8) {
+            keypath = _ref8[key];
+            this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
+              return function(key) {
+                return function() {
+                  return scope[key] = _this.observers[key].value();
+                };
+              };
+            })(this)).call(this, key));
+          }
+          this.bound = true;
+        }
         componentTemplate = document.createElement('div');
         template = this.component.template.call(this);
         if (template instanceof HTMLElement) {
@@ -886,10 +885,10 @@
           this.el.appendChild(componentTemplate.firstChild);
         }
         this.el.removeChild(componentTemplate);
-        _ref7 = this.observers;
+        _ref9 = this.observers;
         _results = [];
-        for (key in _ref7) {
-          observer = _ref7[key];
+        for (key in _ref9) {
+          observer = _ref9[key];
           _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
             return function(key, observer) {
               return function() {

@@ -170,17 +170,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
     @observers = {}
     @upstreamObservers = {}
 
-    bindingRegExp = view.bindingRegExp()
-
-    for attribute in @el.attributes or []
-      unless bindingRegExp.test attribute.name
-        propertyName = @camelCase attribute.name
-
-        if propertyName in (@component.static ? [])
-          @static[propertyName] = attribute.value
-        else
-          @observers[propertyName] = attribute.value
-
   # Intercepts `Rivets.Binding::sync` since component bindings are not bound to
   # a particular model to update it's value.
   sync: ->
@@ -214,14 +203,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
   bind: =>
-    unless @bound
-      for key, keypath of @observers
-        @observers[key] = @observe @view.models, keypath, ((key) => =>
-          scope[key] = @observers[key].value()
-        ).call(@, key)
-
-      @bound = true
-
     if @componentView?
       @componentView.bind()
     else
@@ -239,6 +220,26 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       @componentView = new Rivets.View(@el, @view.models, options)
       @componentView.bind()
+
+      bindingRegExp = @view.bindingRegExp()
+
+      for attribute in @el.attributes or []
+        unless bindingRegExp.test attribute.name
+          propertyName = @camelCase attribute.name
+
+          if propertyName in (@component.static ? [])
+            @static[propertyName] = attribute.value
+          else
+            @observers[propertyName] = attribute.value
+
+      unless @bound
+        for key, keypath of @observers
+          @observers[key] = @observe @view.models, keypath, ((key) => =>
+            scope[key] = @observers[key].value()
+          ).call(@, key)
+
+        @bound = true
+
 
       componentTemplate = document.createElement('div')
       template = @component.template.call this
