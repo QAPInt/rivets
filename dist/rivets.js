@@ -1019,21 +1019,14 @@
     publishes: true,
     priority: 3000,
     bind: function(el) {
-      if (!(el.tagName === 'INPUT' && el.type === 'radio')) {
-        this.event = el.tagName === 'SELECT' ? 'change' : 'input';
-        return Rivets.Util.bindEvent(el, this.event, this.publish);
-      }
+      return Rivets.Util.bindEvent(el, 'change', this.publish);
     },
     unbind: function(el) {
-      if (!(el.tagName === 'INPUT' && el.type === 'radio')) {
-        return Rivets.Util.unbindEvent(el, this.event, this.publish);
-      }
+      return Rivets.Util.unbindEvent(el, 'change', this.publish);
     },
     routine: function(el, value) {
       var o, _i, _len, _ref1, _ref2, _ref3, _results;
-      if (el.tagName === 'INPUT' && el.type === 'radio') {
-        return el.setAttribute('value', value);
-      } else if (window.jQuery != null) {
+      if (window.jQuery != null) {
         el = jQuery(el);
         if ((value != null ? value.toString() : void 0) !== ((_ref1 = el.val()) != null ? _ref1.toString() : void 0)) {
           return el.val(value != null ? value : '');

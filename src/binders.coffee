@@ -71,18 +71,11 @@ Rivets.public.binders.value =
   priority: 3000
 
   bind: (el) ->
-    unless el.tagName is 'INPUT' and el.type is 'radio'
-      @event = if el.tagName is 'SELECT' then 'change' else 'input'
-      Rivets.Util.bindEvent el, @event, @publish
-
+    Rivets.Util.bindEvent el, 'change', @publish
   unbind: (el) ->
-    unless el.tagName is 'INPUT' and el.type is 'radio'
-      Rivets.Util.unbindEvent el, @event, @publish
-
+    Rivets.Util.unbindEvent el, 'change', @publish
   routine: (el, value) ->
-    if el.tagName is 'INPUT' and el.type is 'radio'
-      el.setAttribute 'value', value
-    else if window.jQuery?
+    if window.jQuery?
       el = jQuery el
 
       if value?.toString() isnt el.val()?.toString()
