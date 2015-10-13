@@ -200,6 +200,44 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
+  insertFragment: (selector) ->
+    fragment = document.createDocumentFragment()
+
+    Array.prototype.slice.call(selector, 0)
+      .forEach((node) ->
+        fragment.appendChild(node)
+      )
+
+    fragment
+
+  insertTemplate: (componentTemplate) -> 
+    while componentTemplate.firstChild
+        @el.appendChild(componentTemplate.firstChild)
+    
+     @el.removeChild(componentTemplate)
+
+  insertContent: (componentTemplate, componentContent) => 
+    contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
+
+    contentNodes
+      .sort((content) -> 
+        content.attributes["select"] ? -1 : 1;
+      )
+      .forEach((content) -> 
+        selector = componentContent.querySelectorAll(content.getAttribute('select'))
+
+        if selector.length > 0?
+          content.parentNode.insertBefore(@insertFragment(selector), content)
+          content.parentNode.removeChild(content)
+        else
+          contentParentNode = content.parentNode
+          while componentContent.firstChild
+            contentParentNode.insertBefore(componentContent.firstChild, content)
+          contentParentNode.removeChild(content)
+      , this)
+
+      @insertTemplate componentTemplate
+
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
   bind: =>
@@ -240,7 +278,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-
       componentTemplate = document.createElement('div')
       template = @component.template.call this
       if template instanceof HTMLElement
@@ -256,21 +293,10 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       scope = @component.initialize.call @, @el, @locals()
 
-      templateView = new Rivets.View(componentTemplate, scope, options);
-      templateView.bind();
+      templateView = new Rivets.View(componentTemplate, scope, options)
+      templateView.bind()
 
-      contentNode =  componentTemplate.getElementsByTagName('content')[0];
-
-      if contentNode?
-        contentParentNode = contentNode.parentNode
-        while componentContent.firstChild
-          contentParentNode.insertBefore(componentContent.firstChild, contentNode)
-        contentParentNode.removeChild(contentNode)
-
-      while componentTemplate.firstChild
-        @el.appendChild(componentTemplate.firstChild);
-    
-      @el.removeChild(componentTemplate)
+      @insertContent componentTemplate, componentContent
 
       for key, observer of @observers
         @upstreamObservers[key] = @observe scope, key, ((key, observer) => =>

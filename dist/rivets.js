@@ -763,6 +763,7 @@
       this.type = type;
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
+      this.insertContent = __bind(this.insertContent, this);
       this.locals = __bind(this.locals, this);
       this.component = this.view.components[this.type];
       this["static"] = {};
@@ -798,8 +799,49 @@
       });
     };
 
+    ComponentBinding.prototype.insertFragment = function(selector) {
+      var fragment;
+      fragment = document.createDocumentFragment();
+      Array.prototype.slice.call(selector, 0).forEach(function(node) {
+        return fragment.appendChild(node);
+      });
+      return fragment;
+    };
+
+    ComponentBinding.prototype.insertTemplate = function(componentTemplate) {
+      while (componentTemplate.firstChild) {
+        this.el.appendChild(componentTemplate.firstChild);
+      }
+      return this.el.removeChild(componentTemplate);
+    };
+
+    ComponentBinding.prototype.insertContent = function(componentTemplate, componentContent) {
+      var contentNodes;
+      contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
+      contentNodes.sort(function(content) {
+        var _ref1;
+        return (_ref1 = content.attributes["select"]) != null ? _ref1 : -{
+          1: 1
+        };
+      }).forEach(function(content) {
+        var contentParentNode, selector;
+        selector = componentContent.querySelectorAll(content.getAttribute('select'));
+        if (selector.length > (0 != null)) {
+          content.parentNode.insertBefore(this.insertFragment(selector), content);
+          return content.parentNode.removeChild(content);
+        } else {
+          contentParentNode = content.parentNode;
+          while (componentContent.firstChild) {
+            contentParentNode.insertBefore(componentContent.firstChild, content);
+          }
+          return contentParentNode.removeChild(content);
+        }
+      }, this);
+      return this.insertTemplate(componentTemplate);
+    };
+
     ComponentBinding.prototype.bind = function() {
-      var attribute, bindingRegExp, componentContent, componentTemplate, contentNode, contentParentNode, k, key, keypath, observer, option, options, propertyName, scope, template, templateView, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
+      var attribute, bindingRegExp, componentContent, componentTemplate, k, key, keypath, observer, option, options, propertyName, scope, template, templateView, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
@@ -873,18 +915,7 @@
         scope = this.component.initialize.call(this, this.el, this.locals());
         templateView = new Rivets.View(componentTemplate, scope, options);
         templateView.bind();
-        contentNode = componentTemplate.getElementsByTagName('content')[0];
-        if (contentNode != null) {
-          contentParentNode = contentNode.parentNode;
-          while (componentContent.firstChild) {
-            contentParentNode.insertBefore(componentContent.firstChild, contentNode);
-          }
-          contentParentNode.removeChild(contentNode);
-        }
-        while (componentTemplate.firstChild) {
-          this.el.appendChild(componentTemplate.firstChild);
-        }
-        this.el.removeChild(componentTemplate);
+        this.insertContent(componentTemplate, componentContent);
         _ref9 = this.observers;
         _results = [];
         for (key in _ref9) {
