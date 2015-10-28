@@ -226,7 +226,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
       .forEach((content) -> 
         selector = componentContent.querySelectorAll(content.getAttribute('select'))
 
-        if selector.length > 0?
+        if selector.length > 0
           content.parentNode.insertBefore(@insertFragment(selector), content)
           content.parentNode.removeChild(content)
         else

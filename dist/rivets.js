@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.8.1
+// version: 0.9.0
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -826,7 +826,7 @@
       }).forEach(function(content) {
         var contentParentNode, selector;
         selector = componentContent.querySelectorAll(content.getAttribute('select'));
-        if (selector.length > (0 != null)) {
+        if (selector.length > 0) {
           content.parentNode.insertBefore(this.insertFragment(selector), content);
           return content.parentNode.removeChild(content);
         } else {
