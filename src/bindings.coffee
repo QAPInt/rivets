@@ -280,7 +280,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       componentTemplate = document.createElement('div')
       template = @component.template.call this
-      if template instanceof HTMLElement or DocumentFragment
+      if template instanceof HTMLElement or template instanceof DocumentFragment
         componentTemplate.appendChild(template)
       else
         componentTemplate.innerHTML = template
