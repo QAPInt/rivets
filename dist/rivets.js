@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.9.0
+// version: 0.9.1
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -902,7 +902,7 @@
         }
         componentTemplate = document.createElement('div');
         template = this.component.template.call(this);
-        if (template instanceof HTMLElement) {
+        if (template instanceof HTMLElement || DocumentFragment) {
           componentTemplate.appendChild(template);
         } else {
           componentTemplate.innerHTML = template;
