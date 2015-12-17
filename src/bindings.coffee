@@ -256,9 +256,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
       for option in Rivets.options
         options[option] = @component[option] ? @view[option]
 
-      @componentView = new Rivets.View(@el, @view.models, options)
-      @componentView.bind()
-
       bindingRegExp = @view.bindingRegExp()
 
       for attribute in @el.attributes or []
@@ -285,9 +282,12 @@ class Rivets.ComponentBinding extends Rivets.Binding
       else
         componentTemplate.innerHTML = template
 
-      componentContent = document.createElement 'div'
+      componentContent = document.createDocumentFragment()
       while @el.firstChild
         componentContent.appendChild(@el.firstChild)
+
+      @componentView = new Rivets.View(componentContent, @view.models, options)
+      @componentView.bind()
 
       @el.appendChild(componentTemplate)
 

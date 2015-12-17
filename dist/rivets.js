@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.9.2
+// version: 0.9.3
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -871,8 +871,6 @@
           option = _ref4[_j];
           options[option] = (_ref5 = this.component[option]) != null ? _ref5 : this.view[option];
         }
-        this.componentView = new Rivets.View(this.el, this.view.models, options);
-        this.componentView.bind();
         bindingRegExp = this.view.bindingRegExp();
         _ref6 = this.el.attributes || [];
         for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
@@ -907,10 +905,12 @@
         } else {
           componentTemplate.innerHTML = template;
         }
-        componentContent = document.createElement('div');
+        componentContent = document.createDocumentFragment();
         while (this.el.firstChild) {
           componentContent.appendChild(this.el.firstChild);
         }
+        this.componentView = new Rivets.View(componentContent, this.view.models, options);
+        this.componentView.bind();
         this.el.appendChild(componentTemplate);
         scope = this.component.initialize.call(this, this.el, this.locals());
         templateView = new Rivets.View(componentTemplate, scope, options);
