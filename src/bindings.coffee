@@ -240,11 +240,11 @@ class Rivets.ComponentBinding extends Rivets.Binding
      @el.removeChild(componentTemplate)
 
   insertContent: (componentTemplate, componentContent) => 
-    contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
+    contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0)
 
     contentNodes
       .sort((content) -> 
-        content.attributes["select"] ? -1 : 1;
+        content.attributes["select"] ? -1 : 1
       )
       .forEach((content) -> 
         selector = componentContent.querySelectorAll(content.getAttribute('select'))
@@ -260,6 +260,15 @@ class Rivets.ComponentBinding extends Rivets.Binding
       , this)
 
       @insertTemplate componentTemplate
+
+  detectSolidComponents: (componentTemplate) => 
+    Array.prototype.slice.call(componentTemplate.getElementsByTagName('*'))
+      .filter((element) ->
+        element.nodeName.indexOf('CO-') == 0
+      )
+      .forEach((element) ->
+        element.setAttribute('solid', '')
+      )
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
@@ -300,6 +309,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       componentTemplate = @buildComponentTemplate()
       componentContent = @buildComponentContent()
+
+      @detectSolidComponents componentTemplate
 
       if !@component.block
         @componentView = @buildViewInstance componentContent, @view.models, options

@@ -763,6 +763,7 @@
       this.type = type;
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
+      this.detectSolidComponents = __bind(this.detectSolidComponents, this);
       this.insertContent = __bind(this.insertContent, this);
       this.buildComponentContent = __bind(this.buildComponentContent, this);
       this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
@@ -871,6 +872,14 @@
       return this.insertTemplate(componentTemplate);
     };
 
+    ComponentBinding.prototype.detectSolidComponents = function(componentTemplate) {
+      return Array.prototype.slice.call(componentTemplate.getElementsByTagName('*')).filter(function(element) {
+        return element.nodeName.indexOf('CO-') === 0;
+      }).forEach(function(element) {
+        return element.setAttribute('solid', '');
+      });
+    };
+
     ComponentBinding.prototype.bind = function() {
       var attribute, bindingRegExp, componentContent, componentTemplate, k, key, keypath, observer, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
       if (this.componentView != null) {
@@ -931,6 +940,7 @@
         }
         componentTemplate = this.buildComponentTemplate();
         componentContent = this.buildComponentContent();
+        this.detectSolidComponents(componentTemplate);
         if (!this.component.block) {
           this.componentView = this.buildViewInstance(componentContent, this.view.models, options);
         }
