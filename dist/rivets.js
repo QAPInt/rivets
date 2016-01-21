@@ -868,7 +868,7 @@
           return contentParentNode.removeChild(content);
         }
       }, this);
-      return this.insertTemplate(componentTemplate);
+      return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
     ComponentBinding.prototype.bind = function() {

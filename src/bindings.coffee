@@ -237,7 +237,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     while componentTemplate.firstChild
         @el.appendChild(componentTemplate.firstChild)
     
-     @el.removeChild(componentTemplate)
+    @el.removeChild(componentTemplate)
 
   insertContent: (componentTemplate, componentContent) => 
     contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
@@ -259,7 +259,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
           contentParentNode.removeChild(content)
       , this)
 
-      @insertTemplate componentTemplate
+      componentTemplate.children.length and @insertTemplate componentTemplate
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
