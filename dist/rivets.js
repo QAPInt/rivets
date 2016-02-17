@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.9.3
+// version: 0.9.4
 // author: Michael Richards
 // license: MIT
 (function() {
