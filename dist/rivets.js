@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.9.3
+// version: 0.9.4
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -764,6 +764,9 @@
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.insertContent = __bind(this.insertContent, this);
+      this.buildComponentContent = __bind(this.buildComponentContent, this);
+      this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
+      this.buildViewInstance = __bind(this.buildViewInstance, this);
       this.locals = __bind(this.locals, this);
       this.component = this.view.components[this.type];
       this["static"] = {};
@@ -797,6 +800,34 @@
       return string.replace(/-([a-z])/g, function(grouped) {
         return grouped[1].toUpperCase();
       });
+    };
+
+    ComponentBinding.prototype.buildViewInstance = function(element, model, options) {
+      var viewInstance;
+      viewInstance = new Rivets.View(element, model, options);
+      viewInstance.bind();
+      return viewInstance;
+    };
+
+    ComponentBinding.prototype.buildComponentTemplate = function() {
+      var componentTemplate, template;
+      componentTemplate = document.createElement('div');
+      template = this.component.template.call(this);
+      if (template instanceof HTMLElement || template instanceof DocumentFragment) {
+        componentTemplate.appendChild(template);
+      } else {
+        componentTemplate.innerHTML = template;
+      }
+      return componentTemplate;
+    };
+
+    ComponentBinding.prototype.buildComponentContent = function() {
+      var componentContent;
+      componentContent = document.createDocumentFragment();
+      while (this.el.firstChild) {
+        componentContent.appendChild(this.el.firstChild);
+      }
+      return componentContent;
     };
 
     ComponentBinding.prototype.insertFragment = function(selector) {
@@ -837,11 +868,11 @@
           return contentParentNode.removeChild(content);
         }
       }, this);
-      return this.insertTemplate(componentTemplate);
+      return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
     ComponentBinding.prototype.bind = function() {
-      var attribute, bindingRegExp, componentContent, componentTemplate, k, key, keypath, observer, option, options, propertyName, scope, template, templateView, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
+      var attribute, bindingRegExp, componentContent, componentTemplate, k, key, keypath, observer, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
@@ -898,23 +929,14 @@
           }
           this.bound = true;
         }
-        componentTemplate = document.createElement('div');
-        template = this.component.template.call(this);
-        if (template instanceof HTMLElement || template instanceof DocumentFragment) {
-          componentTemplate.appendChild(template);
-        } else {
-          componentTemplate.innerHTML = template;
+        componentTemplate = this.buildComponentTemplate();
+        componentContent = this.buildComponentContent();
+        if (!this.component.block) {
+          this.componentView = this.buildViewInstance(componentContent, this.view.models, options);
         }
-        componentContent = document.createDocumentFragment();
-        while (this.el.firstChild) {
-          componentContent.appendChild(this.el.firstChild);
-        }
-        this.componentView = new Rivets.View(componentContent, this.view.models, options);
-        this.componentView.bind();
         this.el.appendChild(componentTemplate);
         scope = this.component.initialize.call(this, this.el, this.locals());
-        templateView = new Rivets.View(componentTemplate, scope, options);
-        templateView.bind();
+        this.templateView = this.buildViewInstance(componentTemplate, scope, options);
         this.insertContent(componentTemplate, componentContent);
         _ref9 = this.observers;
         _results = [];
@@ -933,7 +955,7 @@
     };
 
     ComponentBinding.prototype.unbind = function() {
-      var key, observer, _ref1, _ref2, _ref3;
+      var key, observer, _ref1, _ref2, _ref3, _ref4;
       _ref1 = this.upstreamObservers;
       for (key in _ref1) {
         observer = _ref1[key];
@@ -944,7 +966,10 @@
         observer = _ref2[key];
         observer.unobserve();
       }
-      return (_ref3 = this.componentView) != null ? _ref3.unbind.call(this) : void 0;
+      if ((_ref3 = this.componentView) != null) {
+        _ref3.unbind.call(this);
+      }
+      return (_ref4 = this.templateView) != null ? _ref4.unbind.call(this) : void 0;
     };
 
     return ComponentBinding;
