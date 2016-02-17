@@ -200,6 +200,29 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
+  buildViewInstance: (element, model, options) => 
+    viewInstance = new Rivets.View(element, model, options)
+    viewInstance.bind()
+    viewInstance
+
+  buildComponentTemplate: () =>
+    componentTemplate = document.createElement 'div'
+    template = @component.template.call @
+
+    if template instanceof HTMLElement or template instanceof DocumentFragment
+      componentTemplate.appendChild template
+    else
+      componentTemplate.innerHTML = template
+
+    componentTemplate
+
+  buildComponentContent: () =>
+    componentContent = document.createDocumentFragment()
+    while @el.firstChild
+      componentContent.appendChild @el.firstChild
+
+    componentContent
+
   insertFragment: (selector) ->
     fragment = document.createDocumentFragment()
 
@@ -214,7 +237,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     while componentTemplate.firstChild
         @el.appendChild(componentTemplate.firstChild)
     
-     @el.removeChild(componentTemplate)
+    @el.removeChild(componentTemplate)
 
   insertContent: (componentTemplate, componentContent) => 
     contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
@@ -236,7 +259,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
           contentParentNode.removeChild(content)
       , this)
 
-      @insertTemplate componentTemplate
+      componentTemplate.children.length and @insertTemplate componentTemplate
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
@@ -275,26 +298,17 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      componentTemplate = document.createElement('div')
-      template = @component.template.call this
-      if template instanceof HTMLElement or template instanceof DocumentFragment
-        componentTemplate.appendChild(template)
-      else
-        componentTemplate.innerHTML = template
+      componentTemplate = @buildComponentTemplate()
+      componentContent = @buildComponentContent()
 
-      componentContent = document.createDocumentFragment()
-      while @el.firstChild
-        componentContent.appendChild(@el.firstChild)
+      if !@component.block
+        @componentView = @buildViewInstance componentContent, @view.models, options
 
-      @componentView = new Rivets.View(componentContent, @view.models, options)
-      @componentView.bind()
-
-      @el.appendChild(componentTemplate)
+      @el.appendChild componentTemplate
 
       scope = @component.initialize.call @, @el, @locals()
 
-      templateView = new Rivets.View(componentTemplate, scope, options)
-      templateView.bind()
+      @templateView = @buildViewInstance componentTemplate, scope, options
 
       @insertContent componentTemplate, componentContent
 
@@ -312,6 +326,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
       observer.unobserve()
 
     @componentView?.unbind.call @
+    @templateView?.unbind.call @
 
 # Rivets.TextBinding
 # -----------------------
