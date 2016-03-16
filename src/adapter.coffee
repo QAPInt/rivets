@@ -77,7 +77,7 @@ Rivets.public.adapters['.'] =
                 callbacks = map.callbacks
 
                 if callbacks[keypath]
-                  callback() for callback in callbacks[keypath].slice() when callback in callbacks[keypath]
+                  callback(keypath) for callback in callbacks[keypath].slice() when callback in callbacks[keypath]
                 @observeMutations newValue, obj[@id], keypath
 
     unless callback in callbacks[keypath]

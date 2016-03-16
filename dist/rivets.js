@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.9.4
+// version: 0.10.0
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1407,7 +1407,7 @@
                       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
                         callback = _ref1[_i];
                         if (__indexOf.call(callbacks[keypath], callback) >= 0) {
-                          callback();
+                          callback(keypath);
                         }
                       }
                     }
