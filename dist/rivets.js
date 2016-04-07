@@ -945,6 +945,9 @@
         scope = this.component.initialize.call(this, this.el, this.locals());
         this.templateView = this.buildViewInstance(componentTemplate, scope, options);
         this.insertContent(componentTemplate, componentContent);
+        if (typeof scope.ready === "function") {
+          scope.ready(this.templateView);
+        }
         _ref9 = this.observers;
         _results = [];
         for (key in _ref9) {
