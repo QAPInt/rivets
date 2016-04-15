@@ -43,8 +43,14 @@ class Rivets.View
     if dependencies = context.shift()
       options.dependencies = dependencies.split /\s+/
 
-    @bindings.push new Rivets[binding] @, node, type, keypath, options
-
+    binding = new Rivets[binding] @, node, type, keypath, options
+    @bindings.push(binding)
+    binding
+  
+  # Adds new binding to the existing view
+  addBinding: (node, type, declaration) =>
+    @buildBinding('Binding', node, type, declaration).bind()
+  
   # Parses the DOM tree and builds `Rivets.Binding` instances for every matched
   # binding declaration.
   build: =>

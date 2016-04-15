@@ -267,6 +267,7 @@
       this.select = __bind(this.select, this);
       this.traverse = __bind(this.traverse, this);
       this.build = __bind(this.build, this);
+      this.addBinding = __bind(this.addBinding, this);
       this.buildBinding = __bind(this.buildBinding, this);
       this.bindingRegExp = __bind(this.bindingRegExp, this);
       this.options = __bind(this.options, this);
@@ -343,7 +344,13 @@
       if (dependencies = context.shift()) {
         options.dependencies = dependencies.split(/\s+/);
       }
-      return this.bindings.push(new Rivets[binding](this, node, type, keypath, options));
+      binding = new Rivets[binding](this, node, type, keypath, options);
+      this.bindings.push(binding);
+      return binding;
+    };
+
+    View.prototype.addBinding = function(node, type, declaration) {
+      return this.buildBinding('Binding', node, type, declaration).bind();
     };
 
     View.prototype.build = function() {
@@ -938,6 +945,9 @@
         scope = this.component.initialize.call(this, this.el, this.locals());
         this.templateView = this.buildViewInstance(componentTemplate, scope, options);
         this.insertContent(componentTemplate, componentContent);
+        if (typeof scope.ready === "function") {
+          scope.ready(this.templateView);
+        }
         _ref9 = this.observers;
         _results = [];
         for (key in _ref9) {

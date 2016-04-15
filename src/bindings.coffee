@@ -311,6 +311,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
       @templateView = @buildViewInstance componentTemplate, scope, options
 
       @insertContent componentTemplate, componentContent
+		
+      scope.ready? @templateView
 
       for key, observer of @observers
         @upstreamObservers[key] = @observe scope, key, ((key, observer) => =>
