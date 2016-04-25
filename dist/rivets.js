@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.10.0
+// version: 0.11.0
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -350,7 +350,10 @@
     };
 
     View.prototype.addBinding = function(node, type, declaration) {
-      return this.buildBinding('Binding', node, type, declaration).bind();
+      var binding;
+      binding = this.buildBinding('Binding', node, type, declaration);
+      binding.bind();
+      return binding;
     };
 
     View.prototype.build = function() {
@@ -566,7 +569,12 @@
 
     Binding.prototype.setBinder = function() {
       var identifier, regexp, value, _ref1;
-      if (!(this.binder = this.view.binders[this.type])) {
+      if (typeof this.type === 'object') {
+        this.binder = this.type;
+        return;
+      }
+      this.binder = this.view.binders[this.type];
+      if (!this.binder) {
         _ref1 = this.view.binders;
         for (identifier in _ref1) {
           value = _ref1[identifier];
@@ -690,6 +698,8 @@
           id = args.shift();
           if ((_ref2 = this.view.formatters[id]) != null ? _ref2.publish : void 0) {
             value = (_ref3 = this.view.formatters[id]).publish.apply(_ref3, [value].concat(__slice.call(args)));
+          } else {
+            return;
           }
         }
         return this.observer.setValue(value);
@@ -777,7 +787,7 @@
       this.locals = __bind(this.locals, this);
       this.component = this.view.components[this.type];
       this["static"] = {};
-      this.observers = {};
+      this.binders = {};
       this.upstreamObservers = {};
     }
 
@@ -788,17 +798,17 @@
     ComponentBinding.prototype.publish = function() {};
 
     ComponentBinding.prototype.locals = function() {
-      var key, observer, result, value, _ref1, _ref2;
+      var binder, key, result, value, _ref1, _ref2;
       result = {};
       _ref1 = this["static"];
       for (key in _ref1) {
         value = _ref1[key];
         result[key] = value;
       }
-      _ref2 = this.observers;
+      _ref2 = this.binders;
       for (key in _ref2) {
-        observer = _ref2[key];
-        result[key] = observer.value();
+        binder = _ref2[key];
+        result[key] = binder.formattedValue(binder.observer.value());
       }
       return result;
     };
@@ -879,7 +889,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var attribute, bindingRegExp, componentContent, componentTemplate, k, key, keypath, observer, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
+      var attribute, binder, bindingRegExp, componentContent, componentTemplate, declaration, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
       if (this.componentView != null) {
         return this.componentView.bind();
       } else {
@@ -913,26 +923,32 @@
         _ref6 = this.el.attributes || [];
         for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
           attribute = _ref6[_k];
-          if (!bindingRegExp.test(attribute.name)) {
+          if (!bindingRegExp.test(attribute.name) && attribute.value) {
             propertyName = this.camelCase(attribute.name);
             if (__indexOf.call((_ref7 = this.component["static"]) != null ? _ref7 : [], propertyName) >= 0) {
               this["static"][propertyName] = attribute.value;
             } else {
-              this.observers[propertyName] = attribute.value;
+              this.binders[propertyName] = attribute.value;
             }
           }
         }
         if (!this.bound) {
-          _ref8 = this.observers;
+          _ref8 = this.binders;
           for (key in _ref8) {
-            keypath = _ref8[key];
-            this.observers[key] = this.observe(this.view.models, keypath, ((function(_this) {
-              return function(key) {
-                return function() {
-                  return scope[key] = _this.observers[key].value();
+            declaration = _ref8[key];
+            binder = {
+              routine: (function(_this) {
+                return function(el, value) {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] = value : void 0;
                 };
-              };
-            })(this)).call(this, key));
+              })(this),
+              getValue: (function(_this) {
+                return function() {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] : void 0;
+                };
+              })(this)
+            };
+            this.binders[key] = this.view.addBinding(null, binder, declaration);
           }
           this.bound = true;
         }
@@ -948,33 +964,33 @@
         if (typeof scope.ready === "function") {
           scope.ready(this.templateView);
         }
-        _ref9 = this.observers;
+        _ref9 = this.binders;
         _results = [];
         for (key in _ref9) {
-          observer = _ref9[key];
+          binder = _ref9[key];
           _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
-            return function(key, observer) {
+            return function(key, binder) {
               return function() {
-                return observer.setValue(scope[key]);
+                return binder.publish();
               };
             };
-          })(this)).call(this, key, observer)));
+          })(this)).call(this, key, binder)));
         }
         return _results;
       }
     };
 
     ComponentBinding.prototype.unbind = function() {
-      var key, observer, _ref1, _ref2, _ref3, _ref4;
+      var binder, key, observer, _ref1, _ref2, _ref3, _ref4;
       _ref1 = this.upstreamObservers;
       for (key in _ref1) {
         observer = _ref1[key];
         observer.unobserve();
       }
-      _ref2 = this.observers;
+      _ref2 = this.binders;
       for (key in _ref2) {
-        observer = _ref2[key];
-        observer.unobserve();
+        binder = _ref2[key];
+        binder.unbind();
       }
       if ((_ref3 = this.componentView) != null) {
         _ref3.unbind.call(this);
