@@ -89,7 +89,8 @@ class Rivets.Binding
       @formattedValue value.call @model
     else
       @formattedValue value
-
+      
+    @value = value
     @binder.routine?.call @, @el, value
 
   # Syncs up the view binding with the model.
@@ -198,7 +199,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
       result[key] = value
 
     for key, binder of @binders
-      result[key] = binder.formattedValue binder.observer.value()
+      result[key] = binder.formattedValue binder.value
 
     result
 
@@ -297,14 +298,14 @@ class Rivets.ComponentBinding extends Rivets.Binding
             @static[propertyName] = attribute.value
           else
             @binders[propertyName] = attribute.value
-
+      
       unless @bound
-        for key, declaration of @binders
+        Object.keys(@binders).forEach (key) =>
           binder = 
             routine: (el, value) => scope?[key] = value
             getValue: () => scope?[key]
 
-          @binders[key] = @view.addBinding null, binder, declaration
+          @binders[key] = @view.addBinding null, binder, @binders[key]
 
         @bound = true
 
@@ -326,7 +327,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       for key, binder of @binders
         @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
-          binder.publish()
+          unless typeof binder.observer?.value() == 'function'
+            binder.publish()
         ).call(@, key, binder)
 
   # Intercept `Rivets.Binding::unbind` to be called on `@componentView`.
