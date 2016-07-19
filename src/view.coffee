@@ -37,7 +37,6 @@ class Rivets.View
     pipes = (pipe.trim() for pipe in declaration.split '|')
     context = (ctx.trim() for ctx in pipes.shift().split '<')
     keypath = context.shift()
-
     options.formatters = pipes
 
     if dependencies = context.shift()
@@ -49,7 +48,9 @@ class Rivets.View
   
   # Adds new binding to the existing view
   addBinding: (node, type, declaration) =>
-    @buildBinding('Binding', node, type, declaration).bind()
+    binding = @buildBinding('Binding', node, type, declaration)
+    binding.bind()
+    binding
   
   # Parses the DOM tree and builds `Rivets.Binding` instances for every matched
   # binding declaration.

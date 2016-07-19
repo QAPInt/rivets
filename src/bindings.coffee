@@ -15,7 +15,13 @@ class Rivets.Binding
 
   # Sets the binder to use when binding and syncing.
   setBinder: =>
-    unless @binder = @view.binders[@type]
+    if typeof @type == 'object'
+      @binder = @type
+      return
+    
+    @binder = @view.binders[@type]
+    
+    unless @binder
       for identifier, value of @view.binders
         if identifier isnt '*' and identifier.indexOf('*') isnt -1
           regexp = new RegExp "^#{identifier.replace(/\*/g, '.+')}$"
@@ -83,7 +89,8 @@ class Rivets.Binding
       @formattedValue value.call @model
     else
       @formattedValue value
-
+      
+    @value = value
     @binder.routine?.call @, @el, value
 
   # Syncs up the view binding with the model.
@@ -113,6 +120,8 @@ class Rivets.Binding
 
         if @view.formatters[id]?.publish
           value = @view.formatters[id].publish value, args...
+        else
+          return
 
       @observer.setValue value
 
@@ -167,7 +176,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
   constructor: (@view, @el, @type) ->
     @component = @view.components[@type]
     @static = {}
-    @observers = {}
+    @binders = {}
     @upstreamObservers = {}
 
   # Intercepts `Rivets.Binding::sync` since component bindings are not bound to
@@ -189,8 +198,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
     for key, value of @static
       result[key] = value
 
-    for key, observer of @observers
-      result[key] = observer.value()
+    for key, binder of @binders
+      result[key] = binder.formattedValue binder.value
 
     result
 
@@ -282,19 +291,21 @@ class Rivets.ComponentBinding extends Rivets.Binding
       bindingRegExp = @view.bindingRegExp()
 
       for attribute in @el.attributes or []
-        unless bindingRegExp.test attribute.name
+        if (!bindingRegExp.test(attribute.name) && attribute.value)
           propertyName = @camelCase attribute.name
-
+          
           if propertyName in (@component.static ? [])
             @static[propertyName] = attribute.value
           else
-            @observers[propertyName] = attribute.value
-
+            @binders[propertyName] = attribute.value
+      
       unless @bound
-        for key, keypath of @observers
-          @observers[key] = @observe @view.models, keypath, ((key) => =>
-            scope[key] = @observers[key].value()
-          ).call(@, key)
+        Object.keys(@binders).forEach (key) =>
+          binder = 
+            routine: (el, value) => scope?[key] = value
+            getValue: () => scope?[key]
+
+          @binders[key] = @view.addBinding null, binder, @binders[key]
 
         @bound = true
 
@@ -314,18 +325,19 @@ class Rivets.ComponentBinding extends Rivets.Binding
 		
       scope.ready? @templateView
 
-      for key, observer of @observers
-        @upstreamObservers[key] = @observe scope, key, ((key, observer) => =>
-          observer.setValue scope[key]
-        ).call(@, key, observer)
+      for key, binder of @binders
+        @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
+          unless typeof binder.observer?.value() == 'function'
+            binder.publish()
+        ).call(@, key, binder)
 
   # Intercept `Rivets.Binding::unbind` to be called on `@componentView`.
   unbind: =>
     for key, observer of @upstreamObservers
       observer.unobserve()
 
-    for key, observer of @observers
-      observer.unobserve()
+    for key, binder of @binders
+      binder.unbind()
 
     @componentView?.unbind.call @
     @templateView?.unbind.call @
