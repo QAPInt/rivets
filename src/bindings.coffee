@@ -275,6 +275,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
   bind: =>
     if @componentView?
       @componentView.bind()
+      if @templateView?
+        @templateView.bind()
     else
       @el._bound = true
 

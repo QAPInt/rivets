@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.11.0
+// version: 0.12.0
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -892,7 +892,10 @@
     ComponentBinding.prototype.bind = function() {
       var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
       if (this.componentView != null) {
-        return this.componentView.bind();
+        this.componentView.bind();
+        if (this.templateView != null) {
+          return this.templateView.bind();
+        }
       } else {
         this.el._bound = true;
         options = {};
