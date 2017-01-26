@@ -341,6 +341,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     for key, binder of @binders
       binder.unbind()
 
+    @component.unbind?.call @
     @componentView?.unbind.call @
     @templateView?.unbind.call @
 

@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.12.0
+// version: 0.12.1
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -985,7 +985,7 @@
     };
 
     ComponentBinding.prototype.unbind = function() {
-      var binder, key, observer, _ref1, _ref2, _ref3, _ref4;
+      var binder, key, observer, _ref1, _ref2, _ref3, _ref4, _ref5;
       _ref1 = this.upstreamObservers;
       for (key in _ref1) {
         observer = _ref1[key];
@@ -996,10 +996,13 @@
         binder = _ref2[key];
         binder.unbind();
       }
-      if ((_ref3 = this.componentView) != null) {
-        _ref3.unbind.call(this);
+      if ((_ref3 = this.component.unbind) != null) {
+        _ref3.call(this);
       }
-      return (_ref4 = this.templateView) != null ? _ref4.unbind.call(this) : void 0;
+      if ((_ref4 = this.componentView) != null) {
+        _ref4.unbind.call(this);
+      }
+      return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
     };
 
     return ComponentBinding;
