@@ -33,11 +33,12 @@ declare module 'rivets' {
 
   export interface Binding {
     view: View
-    unbind: () => any
-    observe: (obj: Object, keypath: string, callback: (newValue) => void) => Observer
+    unbind: () => void
+    observe: (obj: Object, keypath: string, callback: (newValue: any) => void) => Observer
     keypath: string
     args: string[]
-    eventHandler: (handler: (event: Event) => any) => () => any
+    eventHandler: (handler: (event: Event) => void) => () => any
+    binderData: any
   }
 
   export interface FunctionalBinder<ValueType> {
@@ -45,7 +46,7 @@ declare module 'rivets' {
   }
 
   export interface Binder<ValueType> {
-    routine?: FunctionalBinder<ValueType>
+    routine?: (this: Binding, element: HTMLElement, value: ValueType) => void
     bind?: (this: Binding, element: HTMLElement) => void
     unbind?: (this: Binding, element: HTMLElement) => void
     update?: (this: Binding, model: ValueType) => void
