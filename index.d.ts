@@ -60,7 +60,7 @@ declare module 'rivets' {
   }
 
   export interface Binders {
-    string: Binder<any> | FunctionalBinder<any>
+    [name: string]: Binder<any> | FunctionalBinder<any>
   }
 
   export interface Rivets extends Options{
@@ -83,5 +83,13 @@ declare module 'rivets' {
     bind(element: HTMLElement, models: Object, options?: Object): View;
     // bind(element: JQuery, models: Object, options?: Object): View;
     bind(element: Array<HTMLElement>, models: Object, options?: Object): View;
+
+    _: {
+      sightglass: any
+    }
   }
+
+  const rivets: Rivets
+
+  export default rivets
 }
