@@ -56,7 +56,7 @@ declare module 'rivets' {
   }
 
   export interface Component {
-    template?: string
+    template?: string | (() => string) | (() => HTMLElement)
   }
 
   export interface Binders {
