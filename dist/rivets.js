@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.12.0
+// version: 0.12.1
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -889,6 +889,18 @@
       return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
+    ComponentBinding.prototype.isEmptyTemplate = function(template) {
+      return Array.prototype.slice.call(template.querySelectorAll('*')).every(function(node) {
+        return node.nodeName === 'CONTENT';
+      });
+    };
+
+    ComponentBinding.prototype.buildComponentView = function(el, model, options) {
+      if (!this.component.block) {
+        return this.componentView = this.buildViewInstance(el, model, options);
+      }
+    };
+
     ComponentBinding.prototype.bind = function() {
       var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
       if (this.componentView != null) {
@@ -954,16 +966,21 @@
           this.bound = true;
         }
         componentTemplate = this.buildComponentTemplate();
-        componentContent = this.buildComponentContent();
-        if (!this.component.block) {
-          this.componentView = this.buildViewInstance(componentContent, this.view.models, options);
-        }
-        this.el.appendChild(componentTemplate);
         scope = this.component.initialize.call(this, this.el, this.locals());
-        this.templateView = this.buildViewInstance(componentTemplate, scope, options);
-        this.insertContent(componentTemplate, componentContent);
-        if (typeof scope.ready === "function") {
-          scope.ready(this.templateView);
+        if (this.isEmptyTemplate(componentTemplate)) {
+          this.componentView = this.buildComponentView(this.el, this.view.models, options);
+          if (typeof scope.ready === "function") {
+            scope.ready({});
+          }
+        } else {
+          componentContent = this.buildComponentContent();
+          this.componentView = this.buildComponentView(componentContent, this.view.models, options);
+          this.el.appendChild(componentTemplate);
+          this.templateView = this.buildViewInstance(componentTemplate, scope, options);
+          this.insertContent(componentTemplate, componentContent);
+          if (typeof scope.ready === "function") {
+            scope.ready(this.templateView);
+          }
         }
         _ref8 = this.binders;
         _results = [];
