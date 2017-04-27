@@ -889,6 +889,10 @@
       return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
+    ComponentBinding.prototype.buildLocalScope = function() {
+      return this.component.initialize.call(this, this.el, this.locals());
+    };
+
     ComponentBinding.prototype.isEmptyComponentTemplate = function() {
       var componentTemplate, emptyTemplatePattern;
       componentTemplate = this.component.template.call(this);
@@ -984,20 +988,20 @@
           })(this));
           this.bound = true;
         }
-        scope = this.component.initialize.call(this, this.el, this.locals());
         if (this.isEmptyComponentTemplate()) {
+          scope = this.buildLocalScope();
           this.contentViews = this.buildContentViews(this.el, this.view.models, options);
-          scope.ready != null;
         } else {
           componentTemplate = this.buildComponentTemplate();
           componentContent = this.buildComponentContent();
           this.componentView = this.buildComponentView(componentContent, this.view.models, options);
           this.el.appendChild(componentTemplate);
+          scope = this.buildLocalScope();
           this.templateView = this.buildViewInstance(componentTemplate, scope, options);
           this.insertContent(componentTemplate, componentContent);
-          if (typeof scope.ready === "function") {
-            scope.ready(this.templateView);
-          }
+        }
+        if (typeof scope.ready === "function") {
+          scope.ready(this.templateView ? this.templateView : {});
         }
         _ref8 = this.binders;
         _results = [];

@@ -270,6 +270,9 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       componentTemplate.children.length and @insertTemplate componentTemplate
 
+  buildLocalScope: () ->
+    @component.initialize.call @, @el, @locals()
+
   isEmptyComponentTemplate: () ->
     componentTemplate = @component.template.call @
     emptyTemplatePattern = "<content #{@.type}=\"\"></content>"
@@ -288,7 +291,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
     contentViews
       .filter (view) -> view
       .forEach (view) => view?.unbind.call @
-
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
@@ -331,25 +333,19 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      scope = @component.initialize.call @, @el, @locals()
-
       if @isEmptyComponentTemplate()
+        scope = @buildLocalScope()
         @contentViews = @buildContentViews @el, @view.models, options
-
-        scope.ready?
       else
         componentTemplate = @buildComponentTemplate()
         componentContent = @buildComponentContent()
-
         @componentView = @buildComponentView componentContent, @view.models, options
-
         @el.appendChild componentTemplate
-
+        scope = @buildLocalScope()
         @templateView = @buildViewInstance componentTemplate, scope, options
-
         @insertContent componentTemplate, componentContent
       
-        scope.ready? @templateView
+      scope.ready? if @templateView then @templateView else {}
 
       for key, binder of @binders
         @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
