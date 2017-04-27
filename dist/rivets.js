@@ -889,16 +889,35 @@
       return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
-    ComponentBinding.prototype.isEmptyTemplate = function(template) {
-      return Array.prototype.slice.call(template.querySelectorAll('*')).every(function(node) {
-        return node.nodeName === 'CONTENT';
-      });
+    ComponentBinding.prototype.isEmptyComponentTemplate = function() {
+      var componentTemplate, emptyTemplatePattern;
+      componentTemplate = this.component.template.call(this);
+      emptyTemplatePattern = "<content " + this.type + "=\"\"></content>";
+      return componentTemplate === emptyTemplatePattern;
     };
 
     ComponentBinding.prototype.buildComponentView = function(el, model, options) {
       if (!this.component.block) {
         return this.componentView = this.buildViewInstance(el, model, options);
       }
+    };
+
+    ComponentBinding.prototype.buildContentViews = function(el, model, options) {
+      return Array.prototype.slice.call(el.children).map((function(_this) {
+        return function(node) {
+          return _this.buildComponentView(node, model, options);
+        };
+      })(this));
+    };
+
+    ComponentBinding.prototype.unbindContentViews = function(contentViews) {
+      return contentViews.filter(function(view) {
+        return view;
+      }).forEach((function(_this) {
+        return function(view) {
+          return view != null ? view.unbind.call(_this) : void 0;
+        };
+      })(this));
     };
 
     ComponentBinding.prototype.bind = function() {
@@ -965,14 +984,12 @@
           })(this));
           this.bound = true;
         }
-        componentTemplate = this.buildComponentTemplate();
         scope = this.component.initialize.call(this, this.el, this.locals());
-        if (this.isEmptyTemplate(componentTemplate)) {
-          this.componentView = this.buildComponentView(this.el, this.view.models, options);
-          if (typeof scope.ready === "function") {
-            scope.ready({});
-          }
+        if (this.isEmptyComponentTemplate()) {
+          this.contentViews = this.buildContentViews(this.el, this.view.models, options);
+          scope.ready != null;
         } else {
+          componentTemplate = this.buildComponentTemplate();
           componentContent = this.buildComponentContent();
           this.componentView = this.buildComponentView(componentContent, this.view.models, options);
           this.el.appendChild(componentTemplate);
@@ -1019,7 +1036,10 @@
       if ((_ref4 = this.componentView) != null) {
         _ref4.unbind.call(this);
       }
-      return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
+      if ((_ref5 = this.templateView) != null) {
+        _ref5.unbind.call(this);
+      }
+      return this.unbindContentViews(this.contentViews);
     };
 
     return ComponentBinding;

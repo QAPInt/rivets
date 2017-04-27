@@ -270,15 +270,24 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       componentTemplate.children.length and @insertTemplate componentTemplate
 
-  isEmptyTemplate: (template) ->
-    Array.prototype.slice.call(template.querySelectorAll('*'))
-      .every((node) ->
-        node.nodeName == 'CONTENT'
-      )
+  isEmptyComponentTemplate: () ->
+    componentTemplate = @component.template.call @
+    emptyTemplatePattern = "<content #{@.type}=\"\"></content>"
+
+    componentTemplate == emptyTemplatePattern
 
   buildComponentView: (el, model, options) ->
     if !@component.block
       @componentView = @buildViewInstance el, model, options
+
+  buildContentViews: (el, model, options) ->
+    Array.prototype.slice.call(el.children).map (node) =>
+      @buildComponentView node, model, options
+
+  unbindContentViews: (contentViews) ->
+    contentViews
+      .filter (view) -> view
+      .forEach (view) => view?.unbind.call @
 
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
@@ -322,15 +331,14 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      componentTemplate = @buildComponentTemplate()
       scope = @component.initialize.call @, @el, @locals()
 
-      if @isEmptyTemplate componentTemplate
-        @componentView = @buildComponentView @el, @view.models, options
+      if @isEmptyComponentTemplate()
+        @contentViews = @buildContentViews @el, @view.models, options
 
-        scope.ready? {}
-
+        scope.ready?
       else
+        componentTemplate = @buildComponentTemplate()
         componentContent = @buildComponentContent()
 
         @componentView = @buildComponentView componentContent, @view.models, options
@@ -360,6 +368,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
     @component.unbind?.call @
     @componentView?.unbind.call @
     @templateView?.unbind.call @
+    @unbindContentViews @contentViews
+    
 
 # Rivets.TextBinding
 # -----------------------
