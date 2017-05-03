@@ -209,8 +209,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
-  buildViewInstance: (element, model, options) => 
-    viewInstance = new Rivets.View(element, model, options)
+  buildViewInstance: (element, model, options, parentView) => 
+    viewInstance = new Rivets.View(element, model, options, parentView)
     viewInstance.bind()
     viewInstance
 
@@ -279,9 +279,9 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     componentTemplate == emptyTemplatePattern
 
-  buildComponentView: (el, model, options) ->
+  buildComponentView: (el, model, options, parentView) ->
     if !@component.block
-      @componentView = @buildViewInstance el, model, options
+      @componentView = @buildViewInstance el, model, options, parentView
 
   buildContentViews: (el, model, options) ->
     Array.prototype.slice.call(el.children).map (node) =>
@@ -335,7 +335,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       scope = @buildLocalScope()
 
-      @componentView = @buildComponentView this.el.childNodes, scope, options, this.view
+      @componentView = @buildComponentView Array.prototype.slice.call(@el.childNodes), scope, options, @view
       
       scope.ready? @componentView
 

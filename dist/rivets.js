@@ -825,9 +825,9 @@
       });
     };
 
-    ComponentBinding.prototype.buildViewInstance = function(element, model, options) {
+    ComponentBinding.prototype.buildViewInstance = function(element, model, options, parentView) {
       var viewInstance;
-      viewInstance = new Rivets.View(element, model, options);
+      viewInstance = new Rivets.View(element, model, options, parentView);
       viewInstance.bind();
       return viewInstance;
     };
@@ -905,9 +905,9 @@
       return componentTemplate === emptyTemplatePattern;
     };
 
-    ComponentBinding.prototype.buildComponentView = function(el, model, options) {
+    ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {
       if (!this.component.block) {
-        return this.componentView = this.buildViewInstance(el, model, options);
+        return this.componentView = this.buildViewInstance(el, model, options, parentView);
       }
     };
 
@@ -994,7 +994,7 @@
           this.bound = true;
         }
         scope = this.buildLocalScope();
-        this.componentView = this.buildComponentView(this.el.childNodes, scope, options, this.view);
+        this.componentView = this.buildComponentView(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
         if (typeof scope.ready === "function") {
           scope.ready(this.componentView);
         }
