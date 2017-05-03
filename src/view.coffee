@@ -6,7 +6,7 @@ class Rivets.View
   # The DOM elements and the model objects for binding are passed into the
   # constructor along with any local options that should be used throughout the
   # context of the view and it's bindings.
-  constructor: (@els, @models, options = {}) ->
+  constructor: (@els, @models, options = {}, @parentView) ->
     @els = [@els] unless (@els.jquery or @els instanceof Array)
 
     for option in Rivets.extensions
@@ -114,7 +114,11 @@ class Rivets.View
       type = node.nodeName.toLowerCase()
 
       if @components[type] and not node._bound
-        @bindings.push new Rivets.ComponentBinding @, node, type
+        if type == 'co-content'
+          @bindings.push new Rivets.ComponentBinding @parentView, node, type
+        else
+          @bindings.push new Rivets.ComponentBinding @, node, type
+
         block = true
 
     block

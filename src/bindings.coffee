@@ -333,19 +333,11 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      if @isEmptyComponentTemplate()
-        scope = @buildLocalScope()
-        @contentViews = @buildContentViews @el, @view.models, options
-      else
-        componentTemplate = @buildComponentTemplate()
-        componentContent = @buildComponentContent()
-        @componentView = @buildComponentView componentContent, @view.models, options
-        @el.appendChild componentTemplate
-        scope = @buildLocalScope()
-        @templateView = @buildViewInstance componentTemplate, scope, options
-        @insertContent componentTemplate, componentContent
+      scope = @buildLocalScope()
+
+      @componentView = @buildComponentView this.el.childNodes, scope, options, this.view
       
-      scope.ready? if @templateView then @templateView else {}
+      scope.ready? @componentView
 
       for key, binder of @binders
         @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>

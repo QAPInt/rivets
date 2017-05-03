@@ -252,13 +252,14 @@
   })();
 
   Rivets.View = (function() {
-    function View(els, models, options) {
+    function View(els, models, options, parentView) {
       var k, option, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5;
       this.els = els;
       this.models = models;
       if (options == null) {
         options = {};
       }
+      this.parentView = parentView;
       this.update = __bind(this.update, this);
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
@@ -452,7 +453,11 @@
       if (!block) {
         type = node.nodeName.toLowerCase();
         if (this.components[type] && !node._bound) {
-          this.bindings.push(new Rivets.ComponentBinding(this, node, type));
+          if (type === 'co-content') {
+            this.bindings.push(new Rivets.ComponentBinding(this.parentView, node, type));
+          } else {
+            this.bindings.push(new Rivets.ComponentBinding(this, node, type));
+          }
           block = true;
         }
       }
@@ -925,7 +930,7 @@
     };
 
     ComponentBinding.prototype.bind = function() {
-      var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
+      var attribute, binder, bindingRegExp, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
       if (this.componentView != null) {
         this.componentView.bind();
         if (this.templateView != null) {
@@ -988,20 +993,10 @@
           })(this));
           this.bound = true;
         }
-        if (this.isEmptyComponentTemplate()) {
-          scope = this.buildLocalScope();
-          this.contentViews = this.buildContentViews(this.el, this.view.models, options);
-        } else {
-          componentTemplate = this.buildComponentTemplate();
-          componentContent = this.buildComponentContent();
-          this.componentView = this.buildComponentView(componentContent, this.view.models, options);
-          this.el.appendChild(componentTemplate);
-          scope = this.buildLocalScope();
-          this.templateView = this.buildViewInstance(componentTemplate, scope, options);
-          this.insertContent(componentTemplate, componentContent);
-        }
+        scope = this.buildLocalScope();
+        this.componentView = this.buildComponentView(this.el.childNodes, scope, options, this.view);
         if (typeof scope.ready === "function") {
-          scope.ready(this.templateView ? this.templateView : {});
+          scope.ready(this.componentView);
         }
         _ref8 = this.binders;
         _results = [];
