@@ -130,7 +130,7 @@ class Rivets.View
     contentSSRNode = document.querySelector("[ssr=\"#{contentSSRId}\"]")
 
     if contentSSRNode
-      contentSSRNode
+      contentSSRNode.model.view
     else
       @parentView
 

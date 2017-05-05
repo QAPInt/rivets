@@ -471,7 +471,7 @@
       contentSSRId = node.getAttribute('content-ssr');
       contentSSRNode = document.querySelector("[ssr=\"" + contentSSRId + "\"]");
       if (contentSSRNode) {
-        return contentSSRNode;
+        return contentSSRNode.model.view;
       } else {
         return this.parentView;
       }
