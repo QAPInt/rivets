@@ -114,26 +114,11 @@ class Rivets.View
       type = node.nodeName.toLowerCase()
 
       if @components[type] and not node._bound
-        if type == 'co-content'
-          contentView = @getContentView node
-
-          @bindings.push new Rivets.ComponentBinding contentView, node, type
-        else
-          @bindings.push new Rivets.ComponentBinding @, node, type
+        @bindings.push new Rivets.ComponentBinding @, node, type
 
         block = true
 
     block
-
-  getContentView: (node) =>
-    contentSSRId = node.getAttribute('content-ssr')
-    contentSSRNode = document.querySelector("[ssr=\"#{contentSSRId}\"]")
-
-    if contentSSRNode
-      contentSSRNode.model.view
-    else
-      @parentView
-
 
   # Returns an array of bindings where the supplied function evaluates to true.
   select: (fn) =>

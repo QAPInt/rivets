@@ -266,7 +266,6 @@
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
-      this.getContentView = __bind(this.getContentView, this);
       this.traverse = __bind(this.traverse, this);
       this.build = __bind(this.build, this);
       this.addBinding = __bind(this.addBinding, this);
@@ -416,7 +415,7 @@
     };
 
     View.prototype.traverse = function(node) {
-      var attribute, attributes, binder, bindingRegExp, block, contentView, identifier, regexp, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
       bindingRegExp = this.bindingRegExp();
       block = node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE';
       _ref1 = node.attributes;
@@ -454,27 +453,11 @@
       if (!block) {
         type = node.nodeName.toLowerCase();
         if (this.components[type] && !node._bound) {
-          if (type === 'co-content') {
-            contentView = this.getContentView(node);
-            this.bindings.push(new Rivets.ComponentBinding(contentView, node, type));
-          } else {
-            this.bindings.push(new Rivets.ComponentBinding(this, node, type));
-          }
+          this.bindings.push(new Rivets.ComponentBinding(this, node, type));
           block = true;
         }
       }
       return block;
-    };
-
-    View.prototype.getContentView = function(node) {
-      var contentSSRId, contentSSRNode;
-      contentSSRId = node.getAttribute('content-ssr');
-      contentSSRNode = document.querySelector("[ssr=\"" + contentSSRId + "\"]");
-      if (contentSSRNode) {
-        return contentSSRNode.model.view;
-      } else {
-        return this.parentView;
-      }
     };
 
     View.prototype.select = function(fn) {
