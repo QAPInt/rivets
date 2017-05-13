@@ -31,7 +31,7 @@ class Rivets.View
   bindingRegExp: =>
     new RegExp "^#{@prefix}-"
 
-  buildBinding: (binding, node, type, declaration) =>
+  buildBinding: (binding, node, type, declaration, targetView = @) =>
     options = {}
 
     pipes = (pipe.trim() for pipe in declaration.split '|')
@@ -42,7 +42,7 @@ class Rivets.View
     if dependencies = context.shift()
       options.dependencies = dependencies.split /\s+/
 
-    binding = new Rivets[binding] @, node, type, keypath, options
+    binding = new Rivets[binding] targetView, node, type, keypath, options
     @bindings.push(binding)
     binding
   
@@ -85,6 +85,7 @@ class Rivets.View
     return
 
   traverse: (node) =>
+    targetView = @getTargetView node
     bindingRegExp = @bindingRegExp()
     block = node.nodeName is 'SCRIPT' or node.nodeName is 'STYLE'
 
@@ -108,17 +109,34 @@ class Rivets.View
     for attribute in attributes or node.attributes
       if bindingRegExp.test attribute.name
         type = attribute.name.replace bindingRegExp, ''
-        @buildBinding 'Binding', node, type, attribute.value
+        @buildBinding 'Binding', node, type, attribute.value, targetView
 
     unless block
       type = node.nodeName.toLowerCase()
 
-      if @components[type] and not node._bound
-        @bindings.push new Rivets.ComponentBinding @, node, type
+      if @components[type] and not node._bound and not node.hasAttribute 'block-binding'
+        @bindings.push new Rivets.ComponentBinding targetView, node, type
 
         block = true
 
     block
+
+  getTargetView: (node) =>
+    targetView = @
+    targetViewAttributeName = 'target-view-id'
+
+    if node.hasAttribute targetViewAttributeName
+      targetViewId = node.getAttribute targetViewAttributeName
+      targetViewNode = @getTargetNode node, targetViewId
+
+      targetView = targetViewNode.model.view
+
+    targetView
+
+  getTargetNode: (element, ssrId) =>
+    if element.getAttribute 'ssr' == ssrId
+      element
+    @getTargetNode element.parentNode, ssrId
 
   # Returns an array of bindings where the supplied function evaluates to true.
   select: (fn) =>

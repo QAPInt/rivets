@@ -266,6 +266,8 @@
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
+      this.getTargetNode = __bind(this.getTargetNode, this);
+      this.getTargetView = __bind(this.getTargetView, this);
       this.traverse = __bind(this.traverse, this);
       this.build = __bind(this.build, this);
       this.addBinding = __bind(this.addBinding, this);
@@ -317,8 +319,11 @@
       return new RegExp("^" + this.prefix + "-");
     };
 
-    View.prototype.buildBinding = function(binding, node, type, declaration) {
+    View.prototype.buildBinding = function(binding, node, type, declaration, targetView) {
       var context, ctx, dependencies, keypath, options, pipe, pipes;
+      if (targetView == null) {
+        targetView = this;
+      }
       options = {};
       pipes = (function() {
         var _i, _len, _ref1, _results;
@@ -345,7 +350,7 @@
       if (dependencies = context.shift()) {
         options.dependencies = dependencies.split(/\s+/);
       }
-      binding = new Rivets[binding](this, node, type, keypath, options);
+      binding = new Rivets[binding](targetView, node, type, keypath, options);
       this.bindings.push(binding);
       return binding;
     };
@@ -415,7 +420,8 @@
     };
 
     View.prototype.traverse = function(node) {
-      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, targetView, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      targetView = this.getTargetView(node);
       bindingRegExp = this.bindingRegExp();
       block = node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE';
       _ref1 = node.attributes;
@@ -447,17 +453,36 @@
         attribute = _ref3[_j];
         if (bindingRegExp.test(attribute.name)) {
           type = attribute.name.replace(bindingRegExp, '');
-          this.buildBinding('Binding', node, type, attribute.value);
+          this.buildBinding('Binding', node, type, attribute.value, targetView);
         }
       }
       if (!block) {
         type = node.nodeName.toLowerCase();
-        if (this.components[type] && !node._bound) {
-          this.bindings.push(new Rivets.ComponentBinding(this, node, type));
+        if (this.components[type] && !node._bound && !node.hasAttribute('block-binding')) {
+          this.bindings.push(new Rivets.ComponentBinding(targetView, node, type));
           block = true;
         }
       }
       return block;
+    };
+
+    View.prototype.getTargetView = function(node) {
+      var targetView, targetViewAttributeName, targetViewId, targetViewNode;
+      targetView = this;
+      targetViewAttributeName = 'target-view-id';
+      if (node.hasAttribute(targetViewAttributeName)) {
+        targetViewId = node.getAttribute(targetViewAttributeName);
+        targetViewNode = this.getTargetNode(node, targetViewId);
+        targetView = targetViewNode.model.view;
+      }
+      return targetView;
+    };
+
+    View.prototype.getTargetNode = function(element, ssrId) {
+      if (element.getAttribute('ssr' === ssrId)) {
+        element;
+      }
+      return this.getTargetNode(element.parentNode, ssrId);
     };
 
     View.prototype.select = function(fn) {
