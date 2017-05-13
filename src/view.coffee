@@ -134,8 +134,9 @@ class Rivets.View
     targetView
 
   getTargetNode: (element, ssrId) =>
-    if element.getAttribute 'ssr' == ssrId
-      element
+    elementSsrId = element.getAttribute 'ssr'
+    if elementSsrId == ssrId
+      return element
     @getTargetNode element.parentNode, ssrId
 
   # Returns an array of bindings where the supplied function evaluates to true.

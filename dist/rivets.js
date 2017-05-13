@@ -479,8 +479,10 @@
     };
 
     View.prototype.getTargetNode = function(element, ssrId) {
-      if (element.getAttribute('ssr' === ssrId)) {
-        element;
+      var elementSsrId;
+      elementSsrId = element.getAttribute('ssr');
+      if (elementSsrId === ssrId) {
+        return element;
       }
       return this.getTargetNode(element.parentNode, ssrId);
     };
