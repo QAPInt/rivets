@@ -277,6 +277,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
     if !@component.block
       @componentView = @buildViewInstance el, model, options, parentView
 
+    @view
+
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
   bind: =>

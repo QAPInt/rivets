@@ -925,8 +925,9 @@
 
     ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {
       if (!this.component.block) {
-        return this.componentView = this.buildViewInstance(el, model, options, parentView);
+        this.componentView = this.buildViewInstance(el, model, options, parentView);
       }
+      return this.view;
     };
 
     ComponentBinding.prototype.bind = function() {
