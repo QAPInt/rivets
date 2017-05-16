@@ -38,7 +38,7 @@ banner = function(bundled) {
 }
 
 gulp.task('build', function() {
-  rivets = gulp.src(source)
+  rivets = gulp.src(['src/dev-env.coffee'].concat(source))
     .pipe(concat('rivets.dev.js'))
     .pipe(coffee().on('error', util.log))
     .pipe(header(banner()))
