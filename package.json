@@ -4,7 +4,7 @@
   "version": "0.12.1",
   "author": "Michael Richards",
   "url": "http://rivetsjs.com",
-  "main": "./dist/rivets.js",
+  "main": "./dist/rivets.dev.js",
   "licenses": [
     {
       "type": "MIT",
