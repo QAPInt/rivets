@@ -273,24 +273,9 @@ class Rivets.ComponentBinding extends Rivets.Binding
   buildLocalScope: () ->
     @component.initialize.call @, @el, @locals()
 
-  isEmptyComponentTemplate: () ->
-    componentTemplate = @component.template.call @
-    emptyTemplatePattern = "<content #{@.type}=\"\"></content>"
-
-    componentTemplate == emptyTemplatePattern
-
   buildComponentView: (el, model, options, parentView) ->
     if !@component.block
       @componentView = @buildViewInstance el, model, options, parentView
-
-  buildContentViews: (el, model, options) ->
-    Array.prototype.slice.call(el.children).map (node) =>
-      @buildComponentView node, model, options
-
-  unbindContentViews: (contentViews) ->
-    contentViews
-      .filter (view) -> view
-      .forEach (view) => view?.unbind.call @
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
@@ -333,11 +318,19 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      scope = @buildLocalScope()
-
-      @componentView = @buildComponentView Array.prototype.slice.call(@el.childNodes), scope, options, @view
-      
-      scope.ready? @componentView
+      if isProdEnv
+        scope = @buildLocalScope()
+        @componentView = @buildComponentView Array.prototype.slice.call(@el.childNodes), scope, options, @view
+        scope.ready? @componentView
+      else
+        componentTemplate = @buildComponentTemplate()
+        componentContent = @buildComponentContent()
+        @componentView = @buildComponentView componentContent, @view.models, options
+        @el.appendChild componentTemplate
+        scope = @buildLocalScope()
+        @templateView = @buildViewInstance componentTemplate, scope, options
+        @insertContent componentTemplate, componentContent
+        scope.ready? if @templateView then @templateView else {}
 
       for key, binder of @binders
         @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
@@ -356,7 +349,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
     @component.unbind?.call @
     @componentView?.unbind.call @
     @templateView?.unbind.call @
-    @unbindContentViews @contentViews
     
 
 # Rivets.TextBinding

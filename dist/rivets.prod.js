@@ -3,12 +3,14 @@
 // author: Michael Richards
 // license: MIT
 (function() {
-  var Rivets, bindMethod, unbindMethod, _ref,
+  var Rivets, bindMethod, isProdEnv, unbindMethod, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  isProdEnv = true;
 
   Rivets = {
     options: ['prefix', 'templateDelimiters', 'rootInterface', 'preloadData', 'handler'],
@@ -921,39 +923,14 @@
       return this.component.initialize.call(this, this.el, this.locals());
     };
 
-    ComponentBinding.prototype.isEmptyComponentTemplate = function() {
-      var componentTemplate, emptyTemplatePattern;
-      componentTemplate = this.component.template.call(this);
-      emptyTemplatePattern = "<content " + this.type + "=\"\"></content>";
-      return componentTemplate === emptyTemplatePattern;
-    };
-
     ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {
       if (!this.component.block) {
         return this.componentView = this.buildViewInstance(el, model, options, parentView);
       }
     };
 
-    ComponentBinding.prototype.buildContentViews = function(el, model, options) {
-      return Array.prototype.slice.call(el.children).map((function(_this) {
-        return function(node) {
-          return _this.buildComponentView(node, model, options);
-        };
-      })(this));
-    };
-
-    ComponentBinding.prototype.unbindContentViews = function(contentViews) {
-      return contentViews.filter(function(view) {
-        return view;
-      }).forEach((function(_this) {
-        return function(view) {
-          return view != null ? view.unbind.call(_this) : void 0;
-        };
-      })(this));
-    };
-
     ComponentBinding.prototype.bind = function() {
-      var attribute, binder, bindingRegExp, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
+      var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
       if (this.componentView != null) {
         this.componentView.bind();
         if (this.templateView != null) {
@@ -1016,10 +993,23 @@
           })(this));
           this.bound = true;
         }
-        scope = this.buildLocalScope();
-        this.componentView = this.buildComponentView(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
-        if (typeof scope.ready === "function") {
-          scope.ready(this.componentView);
+        if (isProdEnv) {
+          scope = this.buildLocalScope();
+          this.componentView = this.buildComponentView(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
+          if (typeof scope.ready === "function") {
+            scope.ready(this.componentView);
+          }
+        } else {
+          componentTemplate = this.buildComponentTemplate();
+          componentContent = this.buildComponentContent();
+          this.componentView = this.buildComponentView(componentContent, this.view.models, options);
+          this.el.appendChild(componentTemplate);
+          scope = this.buildLocalScope();
+          this.templateView = this.buildViewInstance(componentTemplate, scope, options);
+          this.insertContent(componentTemplate, componentContent);
+          if (typeof scope.ready === "function") {
+            scope.ready(this.templateView ? this.templateView : {});
+          }
         }
         _ref8 = this.binders;
         _results = [];
@@ -1058,10 +1048,7 @@
       if ((_ref4 = this.componentView) != null) {
         _ref4.unbind.call(this);
       }
-      if ((_ref5 = this.templateView) != null) {
-        _ref5.unbind.call(this);
-      }
-      return this.unbindContentViews(this.contentViews);
+      return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
     };
 
     return ComponentBinding;

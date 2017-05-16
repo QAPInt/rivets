@@ -39,26 +39,16 @@ banner = function(bundled) {
 
 gulp.task('build', function() {
   rivets = gulp.src(source)
-    .pipe(concat('rivets.js'))
+    .pipe(concat('rivets.dev.js'))
     .pipe(coffee().on('error', util.log))
     .pipe(header(banner()))
     .pipe(gulp.dest('dist'))
 
-  rivetsMin = rivets.pipe(concat('rivets.min.js'))
-    .pipe(uglify())
-    .pipe(header(banner()))
-    .pipe(gulp.dest('dist'))
-
-  rivets.on('end', function() {
-    sightglass = 'node_modules/sightglass/index.js'
-    rivets = 'dist/rivets.js'
-
-    gulp.src([sightglass, rivets])
-      .pipe(uglify())
-      .pipe(concat('rivets.bundled.min.js'))
-      .pipe(header(banner(true)))
+  rivetsProd = gulp.src(['src/prod-env.coffee'].concat(source))
+      .pipe(concat('rivets.prod.js'))
+      .pipe(coffee().on('error', util.log))
+      .pipe(header(banner()))
       .pipe(gulp.dest('dist'))
-  })
 })
 
 gulp.task('spec', function() {
