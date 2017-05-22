@@ -85,7 +85,7 @@ class Rivets.View
     return
 
   traverse: (node) =>
-    targetView = @getTargetView node
+    targetView = @getParentView node
     bindingRegExp = @bindingRegExp()
     block = node.nodeName is 'SCRIPT' or node.nodeName is 'STYLE'
 
@@ -121,23 +121,26 @@ class Rivets.View
 
     block
 
-  getTargetView: (node) =>
+  getParentView: (node) =>
     targetView = @
-    targetViewAttributeName = 'target-view-id'
+    targetViewAttributeName = 'parent-view-id'
 
     if node.hasAttribute targetViewAttributeName
       targetViewId = node.getAttribute targetViewAttributeName
-      targetViewNode = @getTargetNode node, targetViewId
+      targetViewNode = @getParentViewNode node, targetViewId
 
-      targetView = targetViewNode.model.view
+      if targetViewNode
+        targetView = targetViewNode.model.view
 
     targetView
 
-  getTargetNode: (element, ssrId) =>
-    elementSsrId = element.getAttribute 'ssr'
+  getParentViewNode: (element, ssrId) =>
+    elementSsrId = element.getAttribute 'view-id'
     if elementSsrId == ssrId
       return element
-    @getTargetNode element.parentNode, ssrId
+
+    if element.parentNode
+      return @getParentViewNode element.parentNode, ssrId
 
   # Returns an array of bindings where the supplied function evaluates to true.
   select: (fn) =>

@@ -268,8 +268,8 @@
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
-      this.getTargetNode = __bind(this.getTargetNode, this);
-      this.getTargetView = __bind(this.getTargetView, this);
+      this.getParentViewNode = __bind(this.getParentViewNode, this);
+      this.getParentView = __bind(this.getParentView, this);
       this.traverse = __bind(this.traverse, this);
       this.build = __bind(this.build, this);
       this.addBinding = __bind(this.addBinding, this);
@@ -423,7 +423,7 @@
 
     View.prototype.traverse = function(node) {
       var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, targetView, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
-      targetView = this.getTargetView(node);
+      targetView = this.getParentView(node);
       bindingRegExp = this.bindingRegExp();
       block = node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE';
       _ref1 = node.attributes;
@@ -468,25 +468,29 @@
       return block;
     };
 
-    View.prototype.getTargetView = function(node) {
+    View.prototype.getParentView = function(node) {
       var targetView, targetViewAttributeName, targetViewId, targetViewNode;
       targetView = this;
-      targetViewAttributeName = 'target-view-id';
+      targetViewAttributeName = 'parent-view-id';
       if (node.hasAttribute(targetViewAttributeName)) {
         targetViewId = node.getAttribute(targetViewAttributeName);
-        targetViewNode = this.getTargetNode(node, targetViewId);
-        targetView = targetViewNode.model.view;
+        targetViewNode = this.getParentViewNode(node, targetViewId);
+        if (targetViewNode) {
+          targetView = targetViewNode.model.view;
+        }
       }
       return targetView;
     };
 
-    View.prototype.getTargetNode = function(element, ssrId) {
+    View.prototype.getParentViewNode = function(element, ssrId) {
       var elementSsrId;
-      elementSsrId = element.getAttribute('ssr');
+      elementSsrId = element.getAttribute('view-id');
       if (elementSsrId === ssrId) {
         return element;
       }
-      return this.getTargetNode(element.parentNode, ssrId);
+      if (element.parentNode) {
+        return this.getParentViewNode(element.parentNode, ssrId);
+      }
     };
 
     View.prototype.select = function(fn) {
@@ -925,7 +929,7 @@
 
     ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {
       if (!this.component.block) {
-        this.componentView = this.buildViewInstance(el, model, options, parentView);
+        return this.buildViewInstance(el, model, options, parentView);
       }
       return this.view;
     };

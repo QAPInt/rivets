@@ -275,7 +275,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
   buildComponentView: (el, model, options, parentView) ->
     if !@component.block
-      @componentView = @buildViewInstance el, model, options, parentView
+      return @buildViewInstance el, model, options, parentView
 
     @view
 
