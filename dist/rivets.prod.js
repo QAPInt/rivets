@@ -116,11 +116,11 @@
       unbindEvent: (function() {
         if ('removeEventListener' in window) {
           return function(el, event, handler) {
-            return el.removeEventListener(event, handler, false);
+            return el && el.removeEventListener(event, handler, false);
           };
         }
         return function(el, event, handler) {
-          return el.detachEvent('on' + event, handler);
+          return el && el.detachEvent('on' + event, handler);
         };
       })(),
       getInputValue: function(el) {
@@ -1036,7 +1036,7 @@
     };
 
     ComponentBinding.prototype.unbind = function() {
-      var binder, key, observer, _ref1, _ref2, _ref3, _ref4, _ref5;
+      var binder, binding, key, observer, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _results;
       _ref1 = this.upstreamObservers;
       for (key in _ref1) {
         observer = _ref1[key];
@@ -1053,7 +1053,20 @@
       if ((_ref4 = this.componentView) != null) {
         _ref4.unbind.call(this);
       }
-      return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
+      if ((_ref5 = this.templateView) != null) {
+        _ref5.unbind.call(this);
+      }
+      this.unbindContentViews(this.contentViews || []);
+      if ((this.templateView != null) && (this.templateView.bindings != null)) {
+        _ref6 = this.templateView.bindings;
+        _results = [];
+        for (key in _ref6) {
+          binding = _ref6[key];
+          binding.el = null;
+          _results.push(binding.marker = null);
+        }
+        return _results;
+      }
     };
 
     return ComponentBinding;

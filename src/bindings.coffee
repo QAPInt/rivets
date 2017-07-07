@@ -18,9 +18,9 @@ class Rivets.Binding
     if typeof @type == 'object'
       @binder = @type
       return
-    
+
     @binder = @view.binders[@type]
-    
+
     unless @binder
       for identifier, value of @view.binders
         if identifier isnt '*' and identifier.indexOf('*') isnt -1
@@ -89,7 +89,7 @@ class Rivets.Binding
       @formattedValue value.call @model
     else
       @formattedValue value
-      
+
     @value = value
     @binder.routine?.call @, @el, value
 
@@ -242,20 +242,20 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     fragment
 
-  insertTemplate: (componentTemplate) -> 
+  insertTemplate: (componentTemplate) ->
     while componentTemplate.firstChild
         @el.appendChild(componentTemplate.firstChild)
-    
+
     @el.removeChild(componentTemplate)
 
-  insertContent: (componentTemplate, componentContent) => 
+  insertContent: (componentTemplate, componentContent) =>
     contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
 
     contentNodes
-      .sort((content) -> 
+      .sort((content) ->
         content.attributes["select"] ? -1 : 1;
       )
-      .forEach((content) -> 
+      .forEach((content) ->
         selector = componentContent.querySelectorAll(content.getAttribute('select'))
 
         if selector.length > 0
@@ -304,15 +304,15 @@ class Rivets.ComponentBinding extends Rivets.Binding
       for attribute in @el.attributes or []
         if (!bindingRegExp.test(attribute.name) && attribute.value)
           propertyName = @camelCase attribute.name
-          
+
           if propertyName in (@component.static ? [])
             @static[propertyName] = attribute.value
           else
             @binders[propertyName] = attribute.value
-      
+
       unless @bound
         Object.keys(@binders).forEach (key) =>
-          binder = 
+          binder =
             routine: (el, value) => scope?[key] = value
             getValue: () => scope?[key]
 
@@ -351,7 +351,13 @@ class Rivets.ComponentBinding extends Rivets.Binding
     @component.unbind?.call @
     @componentView?.unbind.call @
     @templateView?.unbind.call @
-    
+    @unbindContentViews @contentViews || []
+
+    if @templateView? && @templateView.bindings?
+      for key, binding of @templateView.bindings
+        binding.el = null
+        binding.marker = null
+
 
 # Rivets.TextBinding
 # -----------------------
