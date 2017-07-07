@@ -209,7 +209,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
-  buildViewInstance: (element, model, options, parentView) => 
+  buildViewInstance: (element, model, options, parentView) =>
     viewInstance = new Rivets.View(element, model, options, parentView)
     viewInstance.bind()
     viewInstance
@@ -278,6 +278,11 @@ class Rivets.ComponentBinding extends Rivets.Binding
       return @buildViewInstance el, model, options, parentView
 
     @view
+
+  unbindContentViews: (contentViews) ->
+    contentViews
+      .filter (view) -> view
+      .forEach (view) => view?.unbind.call @
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.

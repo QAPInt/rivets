@@ -934,6 +934,16 @@
       return this.view;
     };
 
+    ComponentBinding.prototype.unbindContentViews = function(contentViews) {
+      return contentViews.filter(function(view) {
+        return view;
+      }).forEach((function(_this) {
+        return function(view) {
+          return view != null ? view.unbind.call(_this) : void 0;
+        };
+      })(this));
+    };
+
     ComponentBinding.prototype.bind = function() {
       var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
       if (this.componentView != null) {
