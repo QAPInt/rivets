@@ -268,6 +268,8 @@
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
+      this.getParentNodeByAttributeValue = __bind(this.getParentNodeByAttributeValue, this);
+      this.getParentControllerNode = __bind(this.getParentControllerNode, this);
       this.getParentViewNode = __bind(this.getParentViewNode, this);
       this.getParentView = __bind(this.getParentView, this);
       this.traverse = __bind(this.traverse, this);
@@ -469,9 +471,10 @@
     };
 
     View.prototype.getParentView = function(node) {
-      var targetView, targetViewAttributeName, targetViewId, targetViewNode;
+      var parentControllerNode, targetControllerAttributeName, targetControllerId, targetView, targetViewAttributeName, targetViewId, targetViewNode;
       targetView = this;
       targetViewAttributeName = 'parent-view-id';
+      targetControllerAttributeName = 'parent-controller-id';
       if (node.hasAttribute(targetViewAttributeName)) {
         targetViewId = node.getAttribute(targetViewAttributeName);
         targetViewNode = this.getParentViewNode(node, targetViewId);
@@ -479,17 +482,32 @@
           targetView = targetViewNode.model.view;
         }
       }
+      if (node.hasAttribute(targetControllerAttributeName)) {
+        targetControllerId = node.getAttribute(targetControllerAttributeName);
+        parentControllerNode = this.getParentControllerNode(node, targetControllerId);
+        if (parentControllerNode && parentControllerNode.controllerScope) {
+          targetView.models = Object.assign(targetView.models, parentControllerNode.controllerScope);
+        }
+      }
       return targetView;
     };
 
     View.prototype.getParentViewNode = function(element, ssrId) {
-      var elementSsrId;
-      elementSsrId = element.getAttribute('view-id');
-      if (elementSsrId === ssrId) {
+      return this.getParentNodeByAttributeValue(element, 'view-id', ssrId);
+    };
+
+    View.prototype.getParentControllerNode = function(element, parentControllerId) {
+      return this.getParentNodeByAttributeValue(element, 'controller-id', parentControllerId);
+    };
+
+    View.prototype.getParentNodeByAttributeValue = function(element, atrributeName, atrributeValue) {
+      var elementAttributeValue;
+      elementAttributeValue = element.getAttribute(atrributeName);
+      if (elementAttributeValue === atrributeValue) {
         return element;
       }
       if (element.parentNode) {
-        return this.getParentViewNode(element.parentNode, ssrId);
+        return this.getParentNodeByAttributeValue(element.parentNode, atrributeName, atrributeValue);
       }
     };
 
@@ -924,7 +942,10 @@
     };
 
     ComponentBinding.prototype.buildLocalScope = function() {
-      return this.component.initialize.call(this, this.el, this.locals());
+      if (typeof this.component.initialize === 'function') {
+        return this.component.initialize.call(this, this.el, this.locals());
+      }
+      return {};
     };
 
     ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {

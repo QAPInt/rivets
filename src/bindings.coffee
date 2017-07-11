@@ -271,7 +271,10 @@ class Rivets.ComponentBinding extends Rivets.Binding
       componentTemplate.children.length and @insertTemplate componentTemplate
 
   buildLocalScope: () ->
-    @component.initialize.call @, @el, @locals()
+    if typeof @component.initialize == 'function'
+      return @component.initialize.call @, @el, @locals()
+
+    {}
 
   buildComponentView: (el, model, options, parentView) ->
     if !@component.block
