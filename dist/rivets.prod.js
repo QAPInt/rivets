@@ -502,7 +502,7 @@
 
     View.prototype.getParentNodeByAttributeValue = function(element, atrributeName, atrributeValue) {
       var elementAttributeValue;
-      elementAttributeValue = element.getAttribute(atrributeName);
+      elementAttributeValue = element instanceof HTMLElement && element.getAttribute(atrributeName);
       if (elementAttributeValue === atrributeValue) {
         return element;
       }
@@ -832,9 +832,11 @@
       this.el = el;
       this.type = type;
       this.unbind = __bind(this.unbind, this);
+      this.isRenderedComponent = __bind(this.isRenderedComponent, this);
       this.bind = __bind(this.bind, this);
       this.insertContent = __bind(this.insertContent, this);
       this.buildComponentContent = __bind(this.buildComponentContent, this);
+      this.buildRuntimeComponentTemplate = __bind(this.buildRuntimeComponentTemplate, this);
       this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
       this.buildViewInstance = __bind(this.buildViewInstance, this);
       this.locals = __bind(this.locals, this);
@@ -888,6 +890,17 @@
       } else {
         componentTemplate.innerHTML = template;
       }
+      return componentTemplate;
+    };
+
+    ComponentBinding.prototype.buildRuntimeComponentTemplate = function(rootComponentName) {
+      var componentTemplate;
+      componentTemplate = this.buildComponentTemplate();
+      Array.prototype.slice.call(componentTemplate.querySelectorAll('*')).forEach((function(_this) {
+        return function(templateNode) {
+          return templateNode.setAttribute('runtime-rendering', true);
+        };
+      })(this));
       return componentTemplate;
     };
 
@@ -1019,14 +1032,18 @@
           })(this));
           this.bound = true;
         }
-        if (isProdEnv) {
+        if (isProdEnv && this.isRenderedComponent()) {
           scope = this.buildLocalScope();
           this.componentView = this.buildComponentView(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
           if (typeof scope.ready === "function") {
             scope.ready(this.componentView);
           }
         } else {
-          componentTemplate = this.buildComponentTemplate();
+          if (isProdEnv) {
+            componentTemplate = this.buildRuntimeComponentTemplate();
+          } else {
+            componentTemplate = this.buildComponentTemplate();
+          }
           componentContent = this.buildComponentContent();
           this.componentView = this.buildComponentView(componentContent, this.view.models, options);
           this.el.appendChild(componentTemplate);
@@ -1054,6 +1071,10 @@
         }
         return _results;
       }
+    };
+
+    ComponentBinding.prototype.isRenderedComponent = function() {
+      return !this.el.hasAttribute('runtime-rendering');
     };
 
     ComponentBinding.prototype.unbind = function() {

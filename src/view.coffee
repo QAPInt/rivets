@@ -150,7 +150,7 @@ class Rivets.View
     @getParentNodeByAttributeValue element, 'controller-id', parentControllerId
 
   getParentNodeByAttributeValue: (element, atrributeName, atrributeValue) =>
-    elementAttributeValue = element.getAttribute atrributeName
+    elementAttributeValue = element instanceof HTMLElement and element.getAttribute atrributeName
     if elementAttributeValue == atrributeValue
       return element
 
