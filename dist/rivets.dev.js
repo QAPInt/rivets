@@ -1,14 +1,16 @@
 // Rivets.js
-// version: 0.13.0
+// version: 1.0.0
 // author: Michael Richards
 // license: MIT
 (function() {
-  var Rivets, bindMethod, unbindMethod, _ref,
+  var Rivets, bindMethod, isProdEnv, unbindMethod, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  isProdEnv = false;
 
   Rivets = {
     options: ['prefix', 'templateDelimiters', 'rootInterface', 'preloadData', 'handler'],
@@ -252,19 +254,24 @@
   })();
 
   Rivets.View = (function() {
-    function View(els, models, options) {
+    function View(els, models, options, parentView) {
       var k, option, v, _base, _i, _j, _len, _len1, _ref1, _ref2, _ref3, _ref4, _ref5;
       this.els = els;
       this.models = models;
       if (options == null) {
         options = {};
       }
+      this.parentView = parentView;
       this.update = __bind(this.update, this);
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
       this.unbind = __bind(this.unbind, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
+      this.getParentNodeByAttributeValue = __bind(this.getParentNodeByAttributeValue, this);
+      this.getParentControllerNode = __bind(this.getParentControllerNode, this);
+      this.getParentViewNode = __bind(this.getParentViewNode, this);
+      this.getParentView = __bind(this.getParentView, this);
       this.traverse = __bind(this.traverse, this);
       this.build = __bind(this.build, this);
       this.addBinding = __bind(this.addBinding, this);
@@ -316,8 +323,11 @@
       return new RegExp("^" + this.prefix + "-");
     };
 
-    View.prototype.buildBinding = function(binding, node, type, declaration) {
+    View.prototype.buildBinding = function(binding, node, type, declaration, targetView) {
       var context, ctx, dependencies, keypath, options, pipe, pipes;
+      if (targetView == null) {
+        targetView = this;
+      }
       options = {};
       pipes = (function() {
         var _i, _len, _ref1, _results;
@@ -344,7 +354,7 @@
       if (dependencies = context.shift()) {
         options.dependencies = dependencies.split(/\s+/);
       }
-      binding = new Rivets[binding](this, node, type, keypath, options);
+      binding = new Rivets[binding](targetView, node, type, keypath, options);
       this.bindings.push(binding);
       return binding;
     };
@@ -414,7 +424,8 @@
     };
 
     View.prototype.traverse = function(node) {
-      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, targetView, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      targetView = this.getParentView(node);
       bindingRegExp = this.bindingRegExp();
       block = node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE';
       _ref1 = node.attributes;
@@ -446,17 +457,58 @@
         attribute = _ref3[_j];
         if (bindingRegExp.test(attribute.name)) {
           type = attribute.name.replace(bindingRegExp, '');
-          this.buildBinding('Binding', node, type, attribute.value);
+          this.buildBinding('Binding', node, type, attribute.value, targetView);
         }
       }
       if (!block) {
         type = node.nodeName.toLowerCase();
-        if (this.components[type] && !node._bound) {
-          this.bindings.push(new Rivets.ComponentBinding(this, node, type));
+        if (this.components[type] && !node._bound && !node.hasAttribute('block-binding')) {
+          this.bindings.push(new Rivets.ComponentBinding(targetView, node, type));
           block = true;
         }
       }
       return block;
+    };
+
+    View.prototype.getParentView = function(node) {
+      var parentControllerNode, targetControllerAttributeName, targetControllerId, targetView, targetViewAttributeName, targetViewId, targetViewNode;
+      targetView = this;
+      targetViewAttributeName = 'parent-view-id';
+      targetControllerAttributeName = 'parent-controller-id';
+      if (node.hasAttribute(targetViewAttributeName)) {
+        targetViewId = node.getAttribute(targetViewAttributeName);
+        targetViewNode = this.getParentViewNode(node, targetViewId);
+        if (targetViewNode) {
+          targetView = targetViewNode.model.view;
+        }
+      }
+      if (node.hasAttribute(targetControllerAttributeName)) {
+        targetControllerId = node.getAttribute(targetControllerAttributeName);
+        parentControllerNode = this.getParentControllerNode(node, targetControllerId);
+        if (parentControllerNode && parentControllerNode.controllerScope) {
+          targetView.models = Object.assign(targetView.models, parentControllerNode.controllerScope);
+        }
+      }
+      return targetView;
+    };
+
+    View.prototype.getParentViewNode = function(element, ssrId) {
+      return this.getParentNodeByAttributeValue(element, 'view-id', ssrId);
+    };
+
+    View.prototype.getParentControllerNode = function(element, parentControllerId) {
+      return this.getParentNodeByAttributeValue(element, 'controller-id', parentControllerId);
+    };
+
+    View.prototype.getParentNodeByAttributeValue = function(element, atrributeName, atrributeValue) {
+      var elementAttributeValue;
+      elementAttributeValue = element instanceof HTMLElement && element.getAttribute(atrributeName);
+      if (elementAttributeValue === atrributeValue) {
+        return element;
+      }
+      if (element.parentNode) {
+        return this.getParentNodeByAttributeValue(element.parentNode, atrributeName, atrributeValue);
+      }
     };
 
     View.prototype.select = function(fn) {
@@ -780,9 +832,11 @@
       this.el = el;
       this.type = type;
       this.unbind = __bind(this.unbind, this);
+      this.isRenderedComponent = __bind(this.isRenderedComponent, this);
       this.bind = __bind(this.bind, this);
       this.insertContent = __bind(this.insertContent, this);
       this.buildComponentContent = __bind(this.buildComponentContent, this);
+      this.buildRuntimeComponentTemplate = __bind(this.buildRuntimeComponentTemplate, this);
       this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
       this.buildViewInstance = __bind(this.buildViewInstance, this);
       this.locals = __bind(this.locals, this);
@@ -820,9 +874,9 @@
       });
     };
 
-    ComponentBinding.prototype.buildViewInstance = function(element, model, options) {
+    ComponentBinding.prototype.buildViewInstance = function(element, model, options, parentView) {
       var viewInstance;
-      viewInstance = new Rivets.View(element, model, options);
+      viewInstance = new Rivets.View(element, model, options, parentView);
       viewInstance.bind();
       return viewInstance;
     };
@@ -836,6 +890,17 @@
       } else {
         componentTemplate.innerHTML = template;
       }
+      return componentTemplate;
+    };
+
+    ComponentBinding.prototype.buildRuntimeComponentTemplate = function(rootComponentName) {
+      var componentTemplate;
+      componentTemplate = this.buildComponentTemplate();
+      Array.prototype.slice.call(componentTemplate.querySelectorAll('*')).forEach((function(_this) {
+        return function(templateNode) {
+          return templateNode.setAttribute('runtime-rendering', true);
+        };
+      })(this));
       return componentTemplate;
     };
 
@@ -890,38 +955,17 @@
     };
 
     ComponentBinding.prototype.buildLocalScope = function() {
-      return this.component.initialize.call(this, this.el, this.locals());
-    };
-
-    ComponentBinding.prototype.isEmptyComponentTemplate = function() {
-      var componentTemplate, emptyTemplatePattern;
-      componentTemplate = this.component.template.call(this);
-      emptyTemplatePattern = "<content " + this.type + "=\"\"></content>";
-      return componentTemplate === emptyTemplatePattern;
-    };
-
-    ComponentBinding.prototype.buildComponentView = function(el, model, options) {
-      if (!this.component.block) {
-        return this.componentView = this.buildViewInstance(el, model, options);
+      if (typeof this.component.initialize === 'function') {
+        return this.component.initialize.call(this, this.el, this.locals());
       }
+      return {};
     };
 
-    ComponentBinding.prototype.buildContentViews = function(el, model, options) {
-      return Array.prototype.slice.call(el.children).map((function(_this) {
-        return function(node) {
-          return _this.buildComponentView(node, model, options);
-        };
-      })(this));
-    };
-
-    ComponentBinding.prototype.unbindContentViews = function(contentViews) {
-      return contentViews.filter(function(view) {
-        return view;
-      }).forEach((function(_this) {
-        return function(view) {
-          return view != null ? view.unbind.call(_this) : void 0;
-        };
-      })(this));
+    ComponentBinding.prototype.buildComponentView = function(el, model, options, parentView) {
+      if (!this.component.block) {
+        return this.buildViewInstance(el, model, options, parentView);
+      }
+      return this.view;
     };
 
     ComponentBinding.prototype.bind = function() {
@@ -988,20 +1032,27 @@
           })(this));
           this.bound = true;
         }
-        if (this.isEmptyComponentTemplate()) {
+        if (isProdEnv && this.isRenderedComponent()) {
           scope = this.buildLocalScope();
-          this.contentViews = this.buildContentViews(this.el, this.view.models, options);
+          this.componentView = this.buildComponentView(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
+          if (typeof scope.ready === "function") {
+            scope.ready(this.componentView);
+          }
         } else {
-          componentTemplate = this.buildComponentTemplate();
+          if (isProdEnv) {
+            componentTemplate = this.buildRuntimeComponentTemplate();
+          } else {
+            componentTemplate = this.buildComponentTemplate();
+          }
           componentContent = this.buildComponentContent();
           this.componentView = this.buildComponentView(componentContent, this.view.models, options);
           this.el.appendChild(componentTemplate);
           scope = this.buildLocalScope();
           this.templateView = this.buildViewInstance(componentTemplate, scope, options);
           this.insertContent(componentTemplate, componentContent);
-        }
-        if (typeof scope.ready === "function") {
-          scope.ready(this.templateView ? this.templateView : {});
+          if (typeof scope.ready === "function") {
+            scope.ready(this.templateView ? this.templateView : {});
+          }
         }
         _ref8 = this.binders;
         _results = [];
@@ -1022,6 +1073,10 @@
       }
     };
 
+    ComponentBinding.prototype.isRenderedComponent = function() {
+      return !this.el.hasAttribute('runtime-rendering');
+    };
+
     ComponentBinding.prototype.unbind = function() {
       var binder, key, observer, _ref1, _ref2, _ref3, _ref4, _ref5;
       _ref1 = this.upstreamObservers;
@@ -1040,10 +1095,7 @@
       if ((_ref4 = this.componentView) != null) {
         _ref4.unbind.call(this);
       }
-      if ((_ref5 = this.templateView) != null) {
-        _ref5.unbind.call(this);
-      }
-      return this.unbindContentViews(this.contentViews);
+      return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
     };
 
     return ComponentBinding;

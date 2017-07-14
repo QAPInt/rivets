@@ -6,7 +6,7 @@ class Rivets.View
   # The DOM elements and the model objects for binding are passed into the
   # constructor along with any local options that should be used throughout the
   # context of the view and it's bindings.
-  constructor: (@els, @models, options = {}) ->
+  constructor: (@els, @models, options = {}, @parentView) ->
     @els = [@els] unless (@els.jquery or @els instanceof Array)
 
     for option in Rivets.extensions
@@ -31,7 +31,7 @@ class Rivets.View
   bindingRegExp: =>
     new RegExp "^#{@prefix}-"
 
-  buildBinding: (binding, node, type, declaration) =>
+  buildBinding: (binding, node, type, declaration, targetView = @) =>
     options = {}
 
     pipes = (pipe.trim() for pipe in declaration.split '|')
@@ -42,7 +42,7 @@ class Rivets.View
     if dependencies = context.shift()
       options.dependencies = dependencies.split /\s+/
 
-    binding = new Rivets[binding] @, node, type, keypath, options
+    binding = new Rivets[binding] targetView, node, type, keypath, options
     @bindings.push(binding)
     binding
   
@@ -85,6 +85,7 @@ class Rivets.View
     return
 
   traverse: (node) =>
+    targetView = @getParentView node
     bindingRegExp = @bindingRegExp()
     block = node.nodeName is 'SCRIPT' or node.nodeName is 'STYLE'
 
@@ -108,16 +109,53 @@ class Rivets.View
     for attribute in attributes or node.attributes
       if bindingRegExp.test attribute.name
         type = attribute.name.replace bindingRegExp, ''
-        @buildBinding 'Binding', node, type, attribute.value
+        @buildBinding 'Binding', node, type, attribute.value, targetView
 
     unless block
       type = node.nodeName.toLowerCase()
 
-      if @components[type] and not node._bound
-        @bindings.push new Rivets.ComponentBinding @, node, type
+      if @components[type] and not node._bound and not node.hasAttribute 'block-binding'
+        @bindings.push new Rivets.ComponentBinding targetView, node, type
+
         block = true
 
     block
+
+  getParentView: (node) =>
+    targetView = @
+    targetViewAttributeName = 'parent-view-id'
+    targetControllerAttributeName = 'parent-controller-id'
+
+    if node.hasAttribute targetViewAttributeName
+      targetViewId = node.getAttribute targetViewAttributeName
+      targetViewNode = @getParentViewNode node, targetViewId
+
+      if targetViewNode
+        targetView = targetViewNode.model.view
+
+    if node.hasAttribute targetControllerAttributeName
+      targetControllerId = node.getAttribute targetControllerAttributeName
+
+      parentControllerNode = @getParentControllerNode node, targetControllerId
+
+      if parentControllerNode and parentControllerNode.controllerScope
+        targetView.models = Object.assign targetView.models, parentControllerNode.controllerScope
+
+    targetView
+
+  getParentViewNode: (element, ssrId) =>
+    @getParentNodeByAttributeValue element, 'view-id', ssrId
+
+  getParentControllerNode: (element, parentControllerId) =>
+    @getParentNodeByAttributeValue element, 'controller-id', parentControllerId
+
+  getParentNodeByAttributeValue: (element, atrributeName, atrributeValue) =>
+    elementAttributeValue = element instanceof HTMLElement and element.getAttribute atrributeName
+    if elementAttributeValue == atrributeValue
+      return element
+
+    if element.parentNode
+      return @getParentNodeByAttributeValue element.parentNode, atrributeName, atrributeValue
 
   # Returns an array of bindings where the supplied function evaluates to true.
   select: (fn) =>

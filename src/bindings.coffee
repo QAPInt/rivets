@@ -209,8 +209,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
-  buildViewInstance: (element, model, options) => 
-    viewInstance = new Rivets.View(element, model, options)
+  buildViewInstance: (element, model, options, parentView) => 
+    viewInstance = new Rivets.View(element, model, options, parentView)
     viewInstance.bind()
     viewInstance
 
@@ -222,6 +222,16 @@ class Rivets.ComponentBinding extends Rivets.Binding
       componentTemplate.appendChild template
     else
       componentTemplate.innerHTML = template
+
+    componentTemplate
+
+  buildRuntimeComponentTemplate: (rootComponentName) =>
+    componentTemplate = @buildComponentTemplate()
+
+    Array.prototype.slice.call(componentTemplate.querySelectorAll('*'))
+      .forEach((templateNode) =>
+        templateNode.setAttribute 'runtime-rendering', true
+      )
 
     componentTemplate
 
@@ -271,26 +281,16 @@ class Rivets.ComponentBinding extends Rivets.Binding
       componentTemplate.children.length and @insertTemplate componentTemplate
 
   buildLocalScope: () ->
-    @component.initialize.call @, @el, @locals()
+    if typeof @component.initialize == 'function'
+      return @component.initialize.call @, @el, @locals()
 
-  isEmptyComponentTemplate: () ->
-    componentTemplate = @component.template.call @
-    emptyTemplatePattern = "<content #{@.type}=\"\"></content>"
+    {}
 
-    componentTemplate == emptyTemplatePattern
-
-  buildComponentView: (el, model, options) ->
+  buildComponentView: (el, model, options, parentView) ->
     if !@component.block
-      @componentView = @buildViewInstance el, model, options
+      return @buildViewInstance el, model, options, parentView
 
-  buildContentViews: (el, model, options) ->
-    Array.prototype.slice.call(el.children).map (node) =>
-      @buildComponentView node, model, options
-
-  unbindContentViews: (contentViews) ->
-    contentViews
-      .filter (view) -> view
-      .forEach (view) => view?.unbind.call @
+    @view
 
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
@@ -333,25 +333,32 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      if @isEmptyComponentTemplate()
+      if isProdEnv and @isRenderedComponent()
         scope = @buildLocalScope()
-        @contentViews = @buildContentViews @el, @view.models, options
+        @componentView = @buildComponentView Array.prototype.slice.call(@el.childNodes), scope, options, @view
+        scope.ready? @componentView
       else
-        componentTemplate = @buildComponentTemplate()
+        if isProdEnv
+          componentTemplate = @buildRuntimeComponentTemplate()
+        else
+          componentTemplate = @buildComponentTemplate()
+
         componentContent = @buildComponentContent()
         @componentView = @buildComponentView componentContent, @view.models, options
         @el.appendChild componentTemplate
         scope = @buildLocalScope()
         @templateView = @buildViewInstance componentTemplate, scope, options
         @insertContent componentTemplate, componentContent
-      
-      scope.ready? if @templateView then @templateView else {}
+        scope.ready? if @templateView then @templateView else {}
 
       for key, binder of @binders
         @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
           unless typeof binder.observer?.value() == 'function'
             binder.publish()
         ).call(@, key, binder)
+
+  isRenderedComponent: =>
+    not @el.hasAttribute 'runtime-rendering'
 
   # Intercept `Rivets.Binding::unbind` to be called on `@componentView`.
   unbind: =>
@@ -364,7 +371,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
     @component.unbind?.call @
     @componentView?.unbind.call @
     @templateView?.unbind.call @
-    @unbindContentViews @contentViews
     
 
 # Rivets.TextBinding
