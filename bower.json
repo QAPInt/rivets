@@ -2,7 +2,7 @@
   "name": "rivets",
   "description": "Declarative data binding + templating solution.",
   "homepage": "http://rivetsjs.com",
-  "version": "0.13.0",
+  "version": "1.0.0",
   "main": "dist/rivets.js",
   "license": "MIT",
   "authors": [
