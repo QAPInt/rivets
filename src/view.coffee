@@ -124,6 +124,7 @@ class Rivets.View
   getParentView: (node) =>
     targetView = @
     targetViewAttributeName = 'parent-view-id'
+    targetControllerAttributeName = 'parent-controller-id'
 
     if node.hasAttribute targetViewAttributeName
       targetViewId = node.getAttribute targetViewAttributeName
@@ -132,15 +133,29 @@ class Rivets.View
       if targetViewNode
         targetView = targetViewNode.model.view
 
+    if node.hasAttribute targetControllerAttributeName
+      targetControllerId = node.getAttribute targetControllerAttributeName
+
+      parentControllerNode = @getParentControllerNode node, targetControllerId
+
+      if parentControllerNode and parentControllerNode.controllerScope
+        targetView.models = Object.assign targetView.models, parentControllerNode.controllerScope
+
     targetView
 
   getParentViewNode: (element, ssrId) =>
-    elementSsrId = element.getAttribute 'view-id'
-    if elementSsrId == ssrId
+    @getParentNodeByAttributeValue element, 'view-id', ssrId
+
+  getParentControllerNode: (element, parentControllerId) =>
+    @getParentNodeByAttributeValue element, 'controller-id', parentControllerId
+
+  getParentNodeByAttributeValue: (element, atrributeName, atrributeValue) =>
+    elementAttributeValue = element instanceof HTMLElement and element.getAttribute atrributeName
+    if elementAttributeValue == atrributeValue
       return element
 
     if element.parentNode
-      return @getParentViewNode element.parentNode, ssrId
+      return @getParentNodeByAttributeValue element.parentNode, atrributeName, atrributeValue
 
   # Returns an array of bindings where the supplied function evaluates to true.
   select: (fn) =>

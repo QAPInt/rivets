@@ -225,6 +225,16 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     componentTemplate
 
+  buildRuntimeComponentTemplate: (rootComponentName) =>
+    componentTemplate = @buildComponentTemplate()
+
+    Array.prototype.slice.call(componentTemplate.querySelectorAll('*'))
+      .forEach((templateNode) =>
+        templateNode.setAttribute 'runtime-rendering', true
+      )
+
+    componentTemplate
+
   buildComponentContent: () =>
     componentContent = document.createDocumentFragment()
     while @el.firstChild
@@ -271,7 +281,10 @@ class Rivets.ComponentBinding extends Rivets.Binding
       componentTemplate.children.length and @insertTemplate componentTemplate
 
   buildLocalScope: () ->
-    @component.initialize.call @, @el, @locals()
+    if typeof @component.initialize == 'function'
+      return @component.initialize.call @, @el, @locals()
+
+    {}
 
   buildComponentView: (el, model, options, parentView) ->
     if !@component.block
@@ -325,12 +338,16 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
         @bound = true
 
-      if isProdEnv
+      if isProdEnv and @isRenderedComponent()
         scope = @buildLocalScope()
         @componentView = @buildComponentView Array.prototype.slice.call(@el.childNodes), scope, options, @view
         scope.ready? @componentView
       else
-        componentTemplate = @buildComponentTemplate()
+        if isProdEnv
+          componentTemplate = @buildRuntimeComponentTemplate()
+        else
+          componentTemplate = @buildComponentTemplate()
+
         componentContent = @buildComponentContent()
         @componentView = @buildComponentView componentContent, @view.models, options
         @el.appendChild componentTemplate
@@ -344,6 +361,9 @@ class Rivets.ComponentBinding extends Rivets.Binding
           unless typeof binder.observer?.value() == 'function'
             binder.publish()
         ).call(@, key, binder)
+
+  isRenderedComponent: =>
+    not @el.hasAttribute 'runtime-rendering'
 
   # Intercept `Rivets.Binding::unbind` to be called on `@componentView`.
   unbind: =>
