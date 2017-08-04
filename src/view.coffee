@@ -130,7 +130,7 @@ class Rivets.View
       targetViewId = node.getAttribute targetViewAttributeName
       targetViewNode = @getParentViewNode node, targetViewId
 
-      if targetViewNode
+      if targetViewNode targetViewNode.model
         targetView = targetViewNode.model.view
 
     if node.hasAttribute targetControllerAttributeName

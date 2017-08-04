@@ -478,7 +478,7 @@
       if (node.hasAttribute(targetViewAttributeName)) {
         targetViewId = node.getAttribute(targetViewAttributeName);
         targetViewNode = this.getParentViewNode(node, targetViewId);
-        if (targetViewNode) {
+        if (targetViewNode && targetViewNode.model) {
           targetView = targetViewNode.model.view;
         }
       }
