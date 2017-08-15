@@ -139,7 +139,7 @@ class Rivets.View
       parentControllerNode = @getParentControllerNode node, targetControllerId
 
       if parentControllerNode and parentControllerNode.controllerScope
-        targetView.models = Object.assign targetView.models, parentControllerNode.controllerScope
+        targetView.models = Object.assign @models, Object.assign targetView.models, JSON.parse JSON.stringify @models
 
     targetView
 
