@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.1
+// version: 1.0.2
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -478,7 +478,7 @@
       if (node.hasAttribute(targetViewAttributeName)) {
         targetViewId = node.getAttribute(targetViewAttributeName);
         targetViewNode = this.getParentViewNode(node, targetViewId);
-        if (targetViewNode(targetViewNode.model)) {
+        if (targetViewNode && targetViewNode.model) {
           targetView = targetViewNode.model.view;
         }
       }
