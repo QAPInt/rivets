@@ -1253,7 +1253,7 @@
       var key, model, models, _ref1;
       if (!!value === !this.bound) {
         if (value) {
-          models = {};
+          models = Object.create(this.view.models);
           _ref1 = this.view.models;
           for (key in _ref1) {
             model = _ref1[key];
