@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.12.0
+// version: 0.12.1
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1157,7 +1157,7 @@
       var key, model, models, _ref1;
       if (!!value === !this.bound) {
         if (value) {
-          models = {};
+          models = Object.create(this.view.models);
           _ref1 = this.view.models;
           for (key in _ref1) {
             model = _ref1[key];
