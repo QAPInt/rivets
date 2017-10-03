@@ -109,10 +109,7 @@ Rivets.public.binders.if =
   routine: (el, value) ->
     if !!value is not @bound
       if value
-        models = Object.create(@view.models)
-        models[key] = model for key, model of @view.models
-
-        (@nested or= new Rivets.View(el, models, @view.options())).bind()
+        (@nested or= new Rivets.View(el, @view.models, @view.options())).bind()
         @marker.parentNode.insertBefore el, @marker.nextSibling
         @bound = true
       else

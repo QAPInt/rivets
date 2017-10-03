@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 0.12.1
+// version: 0.12.2
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1154,16 +1154,9 @@
       return (_ref1 = this.nested) != null ? _ref1.unbind() : void 0;
     },
     routine: function(el, value) {
-      var key, model, models, _ref1;
       if (!!value === !this.bound) {
         if (value) {
-          models = Object.create(this.view.models);
-          _ref1 = this.view.models;
-          for (key in _ref1) {
-            model = _ref1[key];
-            models[key] = model;
-          }
-          (this.nested || (this.nested = new Rivets.View(el, models, this.view.options()))).bind();
+          (this.nested || (this.nested = new Rivets.View(el, this.view.models, this.view.options()))).bind();
           this.marker.parentNode.insertBefore(el, this.marker.nextSibling);
           return this.bound = true;
         } else {
