@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.4
+// version: 1.0.5
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -139,6 +139,9 @@
         } else {
           return el.value;
         }
+      },
+      isScreenShotMode: function() {
+        return Rivets["public"].params && Rivets["public"].params.hasOwnProperty('screenshotMode');
       }
     };
   }
@@ -1242,8 +1245,14 @@
         declaration = el.getAttribute(attr);
         this.marker = document.createComment(" rivets: " + this.type + " " + declaration + " ");
         this.bound = false;
+        this.viewBind = false;
         el.removeAttribute(attr);
         el.parentNode.insertBefore(this.marker, el);
+        if (Rivets.Util.isScreenShotMode()) {
+          this.nested = new Rivets.View(el, this.view.models, this.view.options());
+          this.nested.bind();
+          this.viewBind = true;
+        }
         return el.parentNode.removeChild(el);
       }
     },
@@ -1254,7 +1263,10 @@
     routine: function(el, value) {
       if (!!value === !this.bound) {
         if (value) {
-          (this.nested || (this.nested = new Rivets.View(el, this.view.models, this.view.options()))).bind();
+          if (!this.viewBind) {
+            (this.nested || (this.nested = new Rivets.View(el, this.view.models, this.view.options()))).bind();
+          }
+          this.viewBind = false;
           this.marker.parentNode.insertBefore(el, this.marker.nextSibling);
           return this.bound = true;
         } else {

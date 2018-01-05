@@ -98,9 +98,16 @@ Rivets.public.binders.if =
 
       @marker = document.createComment " rivets: #{@type} #{declaration} "
       @bound = false
+      @viewBind = false
 
       el.removeAttribute attr
       el.parentNode.insertBefore @marker, el
+
+      if(Rivets.Util.isScreenShotMode())
+        @nested = new Rivets.View(el, @view.models, @view.options())
+        @nested.bind()
+        @viewBind = true
+      
       el.parentNode.removeChild el
 
   unbind: ->
@@ -109,7 +116,9 @@ Rivets.public.binders.if =
   routine: (el, value) ->
     if !!value is not @bound
       if value
-        (@nested or= new Rivets.View(el, @view.models, @view.options())).bind()
+        if not @viewBind
+          (@nested or= new Rivets.View(el, @view.models, @view.options())).bind()
+        @viewBind = false
         @marker.parentNode.insertBefore el, @marker.nextSibling
         @bound = true
       else

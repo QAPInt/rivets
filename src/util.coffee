@@ -28,3 +28,5 @@ else
       if el.type is 'checkbox' then el.checked
       else if el.type is 'select-multiple' then o.value for o in el when o.selected
       else el.value
+    isScreenShotMode: ->
+      Rivets.public.params and Rivets.public.params.hasOwnProperty 'screenshotMode'
