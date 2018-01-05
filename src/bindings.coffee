@@ -369,7 +369,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
       binder.unbind()
 
     @component.unbind?.call @
-    @componentView?.unbind.call @
+    if(not @component.block)
+      @componentView?.unbind.call @
     @templateView?.unbind.call @
     
 

@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.3
+// version: 1.0.4
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1092,8 +1092,10 @@
       if ((_ref3 = this.component.unbind) != null) {
         _ref3.call(this);
       }
-      if ((_ref4 = this.componentView) != null) {
-        _ref4.unbind.call(this);
+      if (!this.component.block) {
+        if ((_ref4 = this.componentView) != null) {
+          _ref4.unbind.call(this);
+        }
       }
       return (_ref5 = this.templateView) != null ? _ref5.unbind.call(this) : void 0;
     };
