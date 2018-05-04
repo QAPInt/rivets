@@ -107,8 +107,9 @@ class Rivets.View
           attributes = [attribute]
 
     for attribute in attributes or node.attributes
-      if bindingRegExp.test attribute.name
-        type = attribute.name.replace bindingRegExp, ''
+      type = attribute.name.replace bindingRegExp, ''
+      blockAttribute = 'block-binding-' + type
+      if bindingRegExp.test(attribute.name) and not node.hasAttribute blockAttribute
         @buildBinding 'Binding', node, type, attribute.value, targetView
 
     unless block

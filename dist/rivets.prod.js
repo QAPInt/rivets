@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.5
+// version: 1.0.6
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -427,7 +427,7 @@
     };
 
     View.prototype.traverse = function(node) {
-      var attribute, attributes, binder, bindingRegExp, block, identifier, regexp, targetView, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+      var attribute, attributes, binder, bindingRegExp, block, blockAttribute, identifier, regexp, targetView, type, value, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
       targetView = this.getParentView(node);
       bindingRegExp = this.bindingRegExp();
       block = node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE';
@@ -458,8 +458,9 @@
       _ref3 = attributes || node.attributes;
       for (_j = 0, _len1 = _ref3.length; _j < _len1; _j++) {
         attribute = _ref3[_j];
-        if (bindingRegExp.test(attribute.name)) {
-          type = attribute.name.replace(bindingRegExp, '');
+        type = attribute.name.replace(bindingRegExp, '');
+        blockAttribute = 'block-binding-' + type;
+        if (bindingRegExp.test(attribute.name) && !node.hasAttribute(blockAttribute)) {
           this.buildBinding('Binding', node, type, attribute.value, targetView);
         }
       }
