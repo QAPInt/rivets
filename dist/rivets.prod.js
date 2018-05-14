@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.7
+// version: 1.0.8
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1240,40 +1240,45 @@
     block: true,
     priority: 4000,
     bind: function(el) {
-      var div;
-      this.template = el.innerHTML;
-      if (Rivets.Util.isScreenShotMode()) {
-        div = document.createElement('div');
-        div.innerHTML = this.template;
-        el.appendChild(div);
-        this.nested = new Rivets.View(div, this.view.models, this.view.options());
-        this.nested.bind();
-        this.viewBind = true;
+      var attr, declaration;
+      if (this.marker == null) {
+        attr = [this.view.prefix, this.type].join('-').replace('--', '-');
+        declaration = el.getAttribute(attr);
+        this.marker = document.createComment(" rivets: " + this.type + " " + declaration + " ");
+        this.bound = false;
+        this.viewBind = false;
+        el.removeAttribute(attr);
+        el.parentNode.insertBefore(this.marker, el);
+        if (Rivets.Util.isScreenShotMode()) {
+          this.nested = new Rivets.View(el, this.view.models, this.view.options());
+          this.nested.bind();
+          this.viewBind = true;
+        }
+        return el.parentNode.removeChild(el);
       }
-      return el.innerHTML = '';
     },
     unbind: function() {
       var _ref1;
+      this.marker = null;
       if ((_ref1 = this.nested) != null) {
         _ref1.unbind();
       }
       return this.nested = null;
     },
     routine: function(el, value) {
-      var div;
-      if (value) {
-        if (!this.viewBind) {
-          div = document.createElement('div');
-          div.innerHTML = this.template;
-          el.appendChild(div);
-          this.nested = new Rivets.View(div, this.view.models, this.view.options());
-          this.nested.bind();
+      if (!!value === !this.bound) {
+        if (value) {
+          if (!this.viewBind) {
+            (this.nested || (this.nested = new Rivets.View(el, this.view.models, this.view.options()))).bind();
+          }
+          this.viewBind = false;
+          this.marker.parentNode.insertBefore(el, this.marker.nextSibling);
+          return this.bound = true;
+        } else {
+          el.parentNode.removeChild(el);
+          this.nested.unbind();
+          return this.bound = false;
         }
-        return this.viewBind = false;
-      } else {
-        this.nested && this.nested.unbind();
-        this.nested = null;
-        return el.innerHTML = '';
       }
     },
     update: function(models) {

@@ -90,36 +90,43 @@ Rivets.public.binders.value =
 Rivets.public.binders.if =
   block: true
   priority: 4000
-  bind: (el) ->
-    @template = el.innerHTML
 
-    if(Rivets.Util.isScreenShotMode())
-      div = document.createElement('div');
-      div.innerHTML = @template;
-      el.appendChild(div);
-      @nested = new Rivets.View(div, @view.models, @view.options());
-      @nested.bind();
-      @viewBind = true
-    
-    el.innerHTML = ''
+  bind: (el) ->
+    unless @marker?
+      attr = [@view.prefix, @type].join('-').replace '--', '-'
+      declaration = el.getAttribute attr
+
+      @marker = document.createComment " rivets: #{@type} #{declaration} "
+      @bound = false
+      @viewBind = false
+
+      el.removeAttribute attr
+      el.parentNode.insertBefore @marker, el
+
+      if(Rivets.Util.isScreenShotMode())
+        @nested = new Rivets.View(el, @view.models, @view.options())
+        @nested.bind()
+        @viewBind = true
+      
+      el.parentNode.removeChild el
 
   unbind: ->
+    @marker = null;
     @nested?.unbind()
     @nested = null;
 
   routine: (el, value) ->
-    if value
-      if not @viewBind
-        div = document.createElement('div');
-        div.innerHTML = @template;
-        el.appendChild(div);
-        @nested = new Rivets.View(div, @view.models, @view.options());
-        @nested.bind();
-      @viewBind = false
-    else
-      @nested && @nested.unbind();
-      @nested = null;
-      el.innerHTML = '';
+    if !!value is not @bound
+      if value
+        if not @viewBind
+          (@nested or= new Rivets.View(el, @view.models, @view.options())).bind()
+        @viewBind = false
+        @marker.parentNode.insertBefore el, @marker.nextSibling
+        @bound = true
+      else
+        el.parentNode.removeChild el
+        @nested.unbind()
+        @bound = false
 
   update: (models) ->
     @nested?.update models
