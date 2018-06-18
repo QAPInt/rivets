@@ -17,15 +17,15 @@ describe("Rivets.binders", function() {
     it("unbinds the same bound function", function() {
       var boundFn
 
-      sinon.stub(el, 'addEventListener', function(event, fn) {
-        boundFn = fn
-      })
+      sinon.stub(el, 'addEventListener').callsFake(function(event, fn) {
+        boundFn = fn;
+      });
 
       rivets.binders.value.bind.call(context, el)
 
-      sinon.stub(el, 'removeEventListener', function(event, fn) {
-        fn.should.equal(boundFn)
-      })
+      sinon.stub(el, 'removeEventListener').callsFake(function(event, fn) {
+        fn.should.equal(boundFn);
+      });
 
       rivets.binders.value.unbind.call(context, el)
     })
@@ -51,25 +51,25 @@ describe("Rivets.binders", function() {
       var view = rivets.bind(fragment, model);
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
 
     it("reflects changes to the model into the DOM", function() {
       var view = rivets.bind(fragment, model);
-      Should(fragment.childNodes[1].innerText).be.exactly("0");
+      should(fragment.childNodes[1].innerText).be.exactly("0");
 
       model.items[0].val = "howdy";
-      Should(fragment.childNodes[1].innerText).be.exactly("howdy");
+      should(fragment.childNodes[1].innerText).be.exactly("howdy");
     });
 
     it("reflects changes to the model into the DOM after unbind/bind", function() {
       var view = rivets.bind(fragment, model);
-      Should(fragment.childNodes[1].innerText).be.exactly("0");
+      should(fragment.childNodes[1].innerText).be.exactly("0");
 
       view.unbind();
       view.bind();
       model.items[0].val = "howdy";
-      Should(fragment.childNodes[1].innerText).be.exactly("howdy");
+      should(fragment.childNodes[1].innerText).be.exactly("howdy");
     });
 
     it("lets you push an item", function() {
@@ -77,11 +77,11 @@ describe("Rivets.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
 
       model.items.push({val: 3});
-      Should(model.items.length).be.exactly(originalLength + 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(model.items.length).be.exactly(originalLength + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
 
     it("lets you push an item after unbind/bind", function() {
@@ -89,14 +89,14 @@ describe("Rivets.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
 
       view.unbind();
       view.bind();
 
       model.items.push({val: 3});
-      Should(model.items.length).be.exactly(originalLength + 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(model.items.length).be.exactly(originalLength + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
   });
 
@@ -123,8 +123,8 @@ describe("Rivets.binders", function() {
       var view = rivets.bind(fragment, model);
 
       // one child for the original div plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(2);
-      Should(fragment.childNodes[1].innerHTML).be.exactly("1");
+      should(fragment.childNodes.length).be.exactly(2);
+      should(fragment.childNodes[1].innerHTML).be.exactly("1");
     });
 
     it("hides if the value is false", function() {
@@ -133,7 +133,7 @@ describe("Rivets.binders", function() {
       model.data.show = false;
 
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("keeps binding when element becomes visible again", function() {
@@ -144,8 +144,8 @@ describe("Rivets.binders", function() {
       model.data.show = true;
 
       // one child for the original div plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(2);
-      Should(fragment.childNodes[1].innerHTML).be.exactly("2");
+      should(fragment.childNodes.length).be.exactly(2);
+      should(fragment.childNodes[1].innerHTML).be.exactly("2");
     });
 
     it("hides if the value is falsey - zero", function() {
@@ -153,7 +153,7 @@ describe("Rivets.binders", function() {
 
       model.data.show = 0;
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("hides if the value is falsey - empty string", function() {
@@ -161,7 +161,7 @@ describe("Rivets.binders", function() {
 
       model.data.show = "";
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("hides if the value is falsey - undefined", function() {
@@ -169,7 +169,7 @@ describe("Rivets.binders", function() {
 
       model.data.show = undefined;
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
   });
 });
