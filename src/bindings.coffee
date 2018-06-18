@@ -393,4 +393,4 @@ class Rivets.TextBinding extends Rivets.Binding
 
   # Wrap the call to `sync` in fat-arrow to avoid function context issues.
   sync: =>
-    super
+    super()

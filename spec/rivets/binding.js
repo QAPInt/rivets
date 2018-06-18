@@ -1,27 +1,27 @@
 describe('Rivets.Binding', function() {
-  var model, el, view, binding, opts
+  var model, el, view, binding, opts;
 
   beforeEach(function() {
-    rivets.prefix = 'data'
-    adapter = rivets.adapters['.']
+    rivets.prefix = 'data';
+    adapter = rivets.adapters['.'];
 
-    el = document.createElement('div')
-    el.setAttribute('data-text', 'obj.name')
+    el = document.createElement('div');
+    el.setAttribute('data-text', 'obj.name');
 
-    view = rivets.bind(el, {obj: {name: 'test'}})
-    binding = view.bindings[0]
-    model = binding.model
-  })
+    view = rivets.bind(el, {obj: {name: 'test'}});
+    binding = view.bindings[0];
+    model = binding.model;
+  });
 
   it('gets assigned the proper binder routine matching the identifier', function() {
-    binding.binder.routine.should.equal(rivets.binders.text)
-  })
+    binding.binder.routine.should.equal(rivets.binders.text);
+  });
 
   describe('bind()', function() {
     it('subscribes to the model for changes via the adapter', function() {
       sinon.spy(adapter, 'observe')
       binding.bind()
-      adapter.observe.calledWith(model, 'name', binding.sync).should.be.true
+      adapter.observe.calledWith(model, 'name', binding.sync).should.be.true();
     })
 
     it("calls the binder's bind method if one exists", function() {
@@ -30,78 +30,77 @@ describe('Rivets.Binding', function() {
       binding.binder.bind = function(){}
       sinon.spy(binding.binder, 'bind')
       binding.bind()
-      binding.binder.bind.called.should.be.true
-    })
+      binding.binder.bind.called.should.be.true();
+    });
 
     describe('with preloadData set to true', function() {
       beforeEach(function() {
-        rivets.preloadData = true
-      })
+        rivets.preloadData = true;
+      });
 
       it('sets the initial value', function() {
-        sinon.spy(binding, 'set')
-        binding.bind()
-        binding.set.calledWith('test').should.be.true
-      })
-    })
+        sinon.spy(binding, 'set');
+        binding.bind();
+        binding.set.calledWith('test').should.be.true();
+      });
+    });
 
     describe('with dependencies', function() {
       beforeEach(function() {
-        binding.options.dependencies = ['.fname', '.lname']
-      })
+        binding.options.dependencies = ['.fname', '.lname'];
+      });
 
       it('sets up observers on the dependant attributes', function() {
-        binding.bind()
-        adapter.observe.calledWith(model, 'fname', binding.sync).should.be.true
-        adapter.observe.calledWith(model, 'lname', binding.sync).should.be.true
-      })
-    })
-  })
+        binding.bind();
+        adapter.observe.calledWith(model, 'fname', binding.sync).should.be.true();
+        adapter.observe.calledWith(model, 'lname', binding.sync).should.be.true();
+      });
+    });
+  });
 
   describe('unbind()', function() {
     describe('without a binder.unbind defined', function() {
       it('should not throw an error', function() {
-        binding.unbind.should.not.throw()
-      })
-    })
+        binding.unbind.should.not.throw();
+      });
+    });
 
     describe('with a binder.unbind defined', function() {
       beforeEach(function() {
-        binding.binder.unbind = function(){}
-      
-      })
+        binding.binder.unbind = function(){};
+      });
 
       it('should not throw an error', function() {
-        binding.unbind.should.not.throw()
-      })
+        binding.unbind.should.not.throw();
+      });
 
       it("calls the binder's unbind method", function() {
-        sinon.spy(binding.binder, 'unbind')
-        binding.unbind()
-        binding.binder.unbind.called.should.be.true
-      })
-    })
-  })
+        sinon.spy(binding.binder, 'unbind');
+        binding.unbind();
+        binding.binder.unbind.called.should.be.true();
+      });
+    });
+  });
 
   describe('set()', function() {
     it('performs the binding routine with the supplied value', function() {
-      sinon.spy(binding.binder, 'routine')
-      binding.set('sweater')
-      binding.binder.routine.calledWith(el, 'sweater').should.be.true
-    })
+      sinon.spy(binding.binder, 'routine');
+      binding.set('sweater');
+      binding.binder.routine.calledWith(el, 'sweater').should.be.true();
+    });
 
     it('applies any formatters to the value before performing the routine', function() {
-      view.formatters.awesome = function(value) { return 'awesome ' + value }
+      view.formatters.awesome = function(value) { return 'awesome ' + value };
 
-      binding.formatters.push('awesome')
-      sinon.spy(binding.binder, 'routine')
-      binding.set('sweater')
-      binding.binder.routine.calledWith(el, 'awesome sweater').should.be.true
-    })
+      binding.formatters.push('awesome');
+      sinon.spy(binding.binder, 'routine');
+      binding.set('sweater');
+      binding.binder.routine.calledWith(el, 'awesome sweater').should.be.true();
+    });
 
     it('calls methods with the object as context', function() {
-      binding.model = {foo: 'bar'}
-      sinon.spy(binding.binder, 'routine')
+      binding.model = {foo: 'bar'};
+      sinon.spy(binding.binder, 'routine');
       binding.set(function() { return this.foo })
       binding.binder.routine.calledWith(el, binding.model.foo).should.be.true
     })
