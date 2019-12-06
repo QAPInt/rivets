@@ -139,6 +139,18 @@ class Rivets.Binding
 
     @sync() if @view.preloadData
 
+  bindAsync: =>
+    @parseTarget()
+    promise = @binder.bindAsync?.call @, @el
+
+    promise.then () ->
+      if @model? and @options.dependencies?.length
+        for dependency in @options.dependencies
+          observer = @observe @model, dependency, @sync
+          @dependencies.push observer
+
+      @sync() if @view.preloadData
+
 # Unsubscribes from the model and the element.
   unbind: =>
     @binder.unbind?.call @, @el

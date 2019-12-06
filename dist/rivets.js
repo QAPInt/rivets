@@ -551,6 +551,7 @@
       this.getValue = __bind(this.getValue, this);
       this.update = __bind(this.update, this);
       this.unbind = __bind(this.unbind, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
@@ -724,6 +725,26 @@
       if (this.view.preloadData) {
         return this.sync();
       }
+    };
+
+    Binding.prototype.bindAsync = function() {
+      var promise, _ref1;
+      this.parseTarget();
+      promise = (_ref1 = this.binder.bindAsync) != null ? _ref1.call(this, this.el) : void 0;
+      return promise.then(function() {
+        var dependency, observer, _i, _len, _ref2, _ref3;
+        if ((this.model != null) && ((_ref2 = this.options.dependencies) != null ? _ref2.length : void 0)) {
+          _ref3 = this.options.dependencies;
+          for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+            dependency = _ref3[_i];
+            observer = this.observe(this.model, dependency, this.sync);
+            this.dependencies.push(observer);
+          }
+        }
+        if (this.view.preloadData) {
+          return this.sync();
+        }
+      });
     };
 
     Binding.prototype.unbind = function() {
