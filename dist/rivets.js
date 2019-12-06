@@ -780,9 +780,11 @@
       this.el = el;
       this.type = type;
       this.unbind = __bind(this.unbind, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.insertContent = __bind(this.insertContent, this);
       this.buildComponentContent = __bind(this.buildComponentContent, this);
+      this.buildComponentTemplateAsync = __bind(this.buildComponentTemplateAsync, this);
       this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
       this.buildViewInstance = __bind(this.buildViewInstance, this);
       this.locals = __bind(this.locals, this);
@@ -839,6 +841,20 @@
       return componentTemplate;
     };
 
+    ComponentBinding.prototype.buildComponentTemplateAsync = function() {
+      var componentTemplate, templatePromise;
+      componentTemplate = document.createElement('div');
+      templatePromise = this.component.template.call(this(true));
+      return templatePromise.then(function(template) {
+        if (template instanceof HTMLElement || template instanceof DocumentFragment) {
+          componentTemplate.appendChild(template);
+        } else {
+          componentTemplate.innerHTML = template;
+        }
+        return componentTemplate;
+      });
+    };
+
     ComponentBinding.prototype.buildComponentContent = function() {
       var componentContent;
       componentContent = document.createDocumentFragment();
@@ -851,9 +867,7 @@
     ComponentBinding.prototype.insertFragment = function(selector) {
       var fragment;
       fragment = document.createDocumentFragment();
-      Array.prototype.slice.call(selector, 0).forEach(function(node) {
-        return fragment.appendChild(node);
-      });
+      Array.prototype.slice.call(selector, 0).forEach(function(node) {}, fragment.appendChild(node));
       return fragment;
     };
 
@@ -865,16 +879,11 @@
     };
 
     ComponentBinding.prototype.insertContent = function(componentTemplate, componentContent) {
-      var contentNodes;
+      var contentNodes, contentParentNode, selector, _ref1;
       contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
-      contentNodes.sort(function(content) {
-        var _ref1;
-        return (_ref1 = content.attributes["select"]) != null ? _ref1 : -{
-          1: 1
-        };
-      }).forEach(function(content) {
-        var contentParentNode, selector;
-        selector = componentContent.querySelectorAll(content.getAttribute('select'));
+      contentNodes.sort(function(content) {}, (_ref1 = content.attributes["select"]) != null ? _ref1 : -{
+        1: 1
+      }).forEach(function(content) {}, selector = componentContent.querySelectorAll(content.getAttribute('select')), (function() {
         if (selector.length > 0) {
           content.parentNode.insertBefore(this.insertFragment(selector), content);
           return content.parentNode.removeChild(content);
@@ -885,7 +894,7 @@
           }
           return contentParentNode.removeChild(content);
         }
-      }, this);
+      }).call(this), this);
       return componentTemplate.children.length && this.insertTemplate(componentTemplate);
     };
 
@@ -978,6 +987,101 @@
           })(this)).call(this, key, binder)));
         }
         return _results;
+      }
+    };
+
+    ComponentBinding.prototype.bindAsync = function() {
+      var attribute, bindingRegExp, componentContent, componentTemplatePromise, k, option, options, propertyName, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
+      if (this.componentView != null) {
+        return this.componentView.bind();
+      } else {
+        this.el._bound = true;
+        options = {};
+        _ref1 = Rivets.extensions;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          option = _ref1[_i];
+          options[option] = {};
+          if (this.component[option]) {
+            _ref2 = this.component[option];
+            for (k in _ref2) {
+              v = _ref2[k];
+              options[option][k] = v;
+            }
+          }
+          _ref3 = this.view[option];
+          for (k in _ref3) {
+            v = _ref3[k];
+            if ((_base = options[option])[k] == null) {
+              _base[k] = v;
+            }
+          }
+        }
+        _ref4 = Rivets.options;
+        for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
+          option = _ref4[_j];
+          options[option] = (_ref5 = this.component[option]) != null ? _ref5 : this.view[option];
+        }
+        bindingRegExp = this.view.bindingRegExp();
+        _ref6 = this.el.attributes || [];
+        for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
+          attribute = _ref6[_k];
+          if (!bindingRegExp.test(attribute.name) && attribute.value) {
+            propertyName = this.camelCase(attribute.name);
+            if (__indexOf.call((_ref7 = this.component["static"]) != null ? _ref7 : [], propertyName) >= 0) {
+              this["static"][propertyName] = attribute.value;
+            } else {
+              this.binders[propertyName] = attribute.value;
+            }
+          }
+        }
+        if (!this.bound) {
+          Object.keys(this.binders).forEach((function(_this) {
+            return function(key) {
+              var binder;
+              binder = {
+                routine: function(el, value) {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] = value : void 0;
+                },
+                getValue: function() {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] : void 0;
+                }
+              };
+              return _this.binders[key] = _this.view.addBinding(null, binder, _this.binders[key]);
+            };
+          })(this));
+          this.bound = true;
+        }
+        componentTemplatePromise = this.buildComponentTemplateAsync();
+        componentContent = this.buildComponentContent();
+        return componentTemplatePromise.then(function(componentTemplate) {
+          var binder, key, scope, _ref8, _results;
+          if (!this.component.block) {
+            this.componentView = this.buildViewInstance(componentContent, this.view.models, options);
+          }
+          this.el.appendChild(componentTemplate);
+          scope = this.component.initialize.call(this, this.el, this.locals());
+          this.templateView = this.buildViewInstance(componentTemplate, scope, options);
+          this.insertContent(componentTemplate, componentContent);
+          if (typeof scope.ready === "function") {
+            scope.ready(this.templateView);
+          }
+          _ref8 = this.binders;
+          _results = [];
+          for (key in _ref8) {
+            binder = _ref8[key];
+            _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
+              return function(key, binder) {
+                return function() {
+                  var _ref9;
+                  if (typeof ((_ref9 = binder.observer) != null ? _ref9.value() : void 0) !== 'function') {
+                    return binder.publish();
+                  }
+                };
+              };
+            })(this)).call(this, key, binder)));
+          }
+          return _results;
+        });
       }
     };
 
