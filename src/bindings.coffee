@@ -239,7 +239,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
   buildComponentTemplateAsync: () =>
     componentTemplate = document.createElement 'div'
-    templatePromise = @component.template.call @ true
+    templatePromise = @component.template.call @, true
 
     templatePromise.then (template) ->
       if template instanceof HTMLElement or template instanceof DocumentFragment

@@ -885,7 +885,7 @@
     ComponentBinding.prototype.buildComponentTemplateAsync = function() {
       var componentTemplate, templatePromise;
       componentTemplate = document.createElement('div');
-      templatePromise = this.component.template.call(this(true));
+      templatePromise = this.component.template.call(this, true);
       return templatePromise.then(function(template) {
         if (template instanceof HTMLElement || template instanceof DocumentFragment) {
           componentTemplate.appendChild(template);
