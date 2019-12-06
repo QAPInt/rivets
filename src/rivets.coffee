@@ -56,11 +56,17 @@ Rivets =
 
       return
 
-    # Binds some data to a template / element. Returns a Rivets.View instance.
+# Binds some data to a template / element. Returns a Rivets.View instance.
     bind: (el, models = {}, options = {}) ->
       view = new Rivets.View(el, models, options)
       view.bind()
       view
+
+# Binds some data to a template / element. Returns a Rivets.View instance.
+    bindAsync: (el, models = {}, options = {}) ->
+      view = new Rivets.View(el, models, options)
+      view.bindAsync().then () ->
+        view
 
     # Initializes a new instance of a component on the specified element and
     # returns a Rivets.View instance.

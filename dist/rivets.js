@@ -54,6 +54,19 @@
         view.bind();
         return view;
       },
+      bindAsync: function(el, models, options) {
+        var view;
+        if (models == null) {
+          models = {};
+        }
+        if (options == null) {
+          options = {};
+        }
+        view = new Rivets.View(el, models, options);
+        return view.bindAsync().then(function() {
+          return view;
+        });
+      },
       init: function(component, el, data) {
         var scope, template, view;
         if (data == null) {
@@ -263,6 +276,7 @@
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
       this.unbind = __bind(this.unbind, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
       this.traverse = __bind(this.traverse, this);
@@ -481,6 +495,12 @@
         _results.push(binding.bind());
       }
       return _results;
+    };
+
+    View.prototype.bindAsync = function() {
+      return Promise.all(this.bindings.map(function(binding) {
+        return binding.bindAsync();
+      }));
     };
 
     View.prototype.unbind = function() {
