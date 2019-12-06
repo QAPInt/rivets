@@ -397,7 +397,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
       componentTemplatePromise = @buildComponentTemplateAsync()
       componentContent = @buildComponentContent()
 
-      componentTemplatePromise.then (componentTemplate) ->
+
+      componentTemplatePromise.then (componentTemplate) =>
         if !@component.block
           @componentView = @buildViewInstance componentContent, @view.models, options
 

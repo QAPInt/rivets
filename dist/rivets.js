@@ -1094,35 +1094,35 @@
         }
         componentTemplatePromise = this.buildComponentTemplateAsync();
         componentContent = this.buildComponentContent();
-        return componentTemplatePromise.then(function(componentTemplate) {
-          var binder, key, scope, _ref8, _results;
-          if (!this.component.block) {
-            this.componentView = this.buildViewInstance(componentContent, this.view.models, options);
-          }
-          this.el.appendChild(componentTemplate);
-          scope = this.component.initialize.call(this, this.el, this.locals());
-          this.templateView = this.buildViewInstance(componentTemplate, scope, options);
-          this.insertContent(componentTemplate, componentContent);
-          if (typeof scope.ready === "function") {
-            scope.ready(this.templateView);
-          }
-          _ref8 = this.binders;
-          _results = [];
-          for (key in _ref8) {
-            binder = _ref8[key];
-            _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
-              return function(key, binder) {
+        return componentTemplatePromise.then((function(_this) {
+          return function(componentTemplate) {
+            var binder, key, scope, _ref8, _results;
+            if (!_this.component.block) {
+              _this.componentView = _this.buildViewInstance(componentContent, _this.view.models, options);
+            }
+            _this.el.appendChild(componentTemplate);
+            scope = _this.component.initialize.call(_this, _this.el, _this.locals());
+            _this.templateView = _this.buildViewInstance(componentTemplate, scope, options);
+            _this.insertContent(componentTemplate, componentContent);
+            if (typeof scope.ready === "function") {
+              scope.ready(_this.templateView);
+            }
+            _ref8 = _this.binders;
+            _results = [];
+            for (key in _ref8) {
+              binder = _ref8[key];
+              _results.push(_this.upstreamObservers[key] = _this.observe(scope, key, (function(key, binder) {
                 return function() {
                   var _ref9;
                   if (typeof ((_ref9 = binder.observer) != null ? _ref9.value() : void 0) !== 'function') {
                     return binder.publish();
                   }
                 };
-              };
-            })(this)).call(this, key, binder)));
-          }
-          return _results;
-        });
+              }).call(_this, key, binder)));
+            }
+            return _results;
+          };
+        })(this));
       }
     };
 
