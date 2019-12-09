@@ -402,6 +402,8 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
       @updateBinders(scope)
 
+  # Async: Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
+  # map of models from the root view. Bind `@componentView` on subsequent calls.
   bindAsync: =>
     if @componentView?
       @componentView.bindAsync().then () =>
@@ -465,77 +467,6 @@ class Rivets.ComponentBinding extends Rivets.Binding
             @insertContent componentTemplate, componentContent
             scope.ready? if @templateView then @templateView else {}
             @updateBinders(scope)
-
-
-  # Async: Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
-  # map of models from the root view. Bind `@componentView` on subsequent calls.
-#  bindAsync: =>
-#    if @componentView?
-#      @componentView.bindAsync().then () =>
-#        if @templateView?
-#          @templateView.bindAsync()
-#    else
-#      @el._bound = true
-#
-#      options = {}
-#
-#      for option in Rivets.extensions
-#        options[option] = {}
-#        options[option][k] = v for k, v of @component[option] if @component[option]
-#        options[option][k] ?= v for k, v of @view[option]
-#
-#      for option in Rivets.options
-#        options[option] = @component[option] ? @view[option]
-#
-#      bindingRegExp = @view.bindingRegExp()
-#
-#      for attribute in @el.attributes or []
-#        if (!bindingRegExp.test(attribute.name) && attribute.value)
-#          propertyName = @camelCase attribute.name
-#
-#          if propertyName in (@component.static ? [])
-#            @static[propertyName] = attribute.value
-#          else
-#            @binders[propertyName] = attribute.value
-#
-#      unless @bound
-#        Object.keys(@binders).forEach (key) =>
-#          binder =
-#            routine: (el, value) => scope?[key] = value
-#            getValue: () => scope?[key]
-#
-#          @binders[key] = @view.addBinding null, binder, @binders[key]
-#
-#        @bound = true
-#
-#      if isProdEnv and @isRenderedComponent()
-#        scope = @buildLocalScope()
-#        componentViewPromise = @buildComponentViewAsync Array.prototype.slice.call(@el.childNodes), scope, options, @view
-#        componentViewPromise.then (componentView) =>
-#          @componentView = componentView
-#          scope.ready? @componentView
-#          @updateBinders scope
-#      else
-#        if isProdEnv
-#          componentTemplatePromise = @buildRuntimeComponentTemplateAsync()
-#        else
-#          componentTemplatePromise = @buildComponentTemplateAsync()
-#
-#        componentTemplatePromise.then (componentTemplate) =>
-#          componentContent = @buildComponentContent()
-#          componentViewPromise = @buildComponentViewAsync componentContent, @view.models, options
-#
-#          componentViewPromise.then (componentView) =>
-#            @componentView = componentView
-#            @el.appendChild componentTemplate
-#            scope = @buildLocalScope()
-#            templateViewPromise = @buildViewInstanceAsync componentTemplate, scope, options
-#            templateViewPromise.then (templateView) =>
-#              @templateView = templateView
-#              @insertContent componentTemplate, componentContent
-#              scope.ready? if @templateView then @templateView else {}
-#              @updateBinders scope
-
 
   updateBinders: (scope) =>
     for key, binder of @binders
