@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.8
+// version: 1.0.9
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -55,6 +55,19 @@
         view = new Rivets.View(el, models, options);
         view.bind();
         return view;
+      },
+      bindAsync: function(el, models, options) {
+        var view;
+        if (models == null) {
+          models = {};
+        }
+        if (options == null) {
+          options = {};
+        }
+        view = new Rivets.View(el, models, options);
+        return view.bindAsync().then(function() {
+          return view;
+        });
       },
       init: function(component, el, data) {
         var scope, template, view;
@@ -269,6 +282,7 @@
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
       this.unbind = __bind(this.unbind, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.select = __bind(this.select, this);
       this.getParentNodeByAttributeValue = __bind(this.getParentNodeByAttributeValue, this);
@@ -539,6 +553,14 @@
       return _results;
     };
 
+    View.prototype.bindAsync = function() {
+      return Promise.all(this.bindings.map((function(_this) {
+        return function(binding) {
+          return binding.bindAsync();
+        };
+      })(this)));
+    };
+
     View.prototype.unbind = function() {
       var binding, _i, _len, _ref1, _results;
       _ref1 = this.bindings;
@@ -607,6 +629,7 @@
       this.getValue = __bind(this.getValue, this);
       this.update = __bind(this.update, this);
       this.unbind = __bind(this.unbind, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.publish = __bind(this.publish, this);
       this.sync = __bind(this.sync, this);
@@ -782,6 +805,26 @@
       }
     };
 
+    Binding.prototype.bindAsync = function() {
+      var promise, _ref1;
+      this.parseTarget();
+      promise = (_ref1 = this.binder.bindAsync) != null ? _ref1.call(this, this.el) : void 0;
+      return promise.then(function() {
+        var dependency, observer, _i, _len, _ref2, _ref3;
+        if ((this.model != null) && ((_ref2 = this.options.dependencies) != null ? _ref2.length : void 0)) {
+          _ref3 = this.options.dependencies;
+          for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+            dependency = _ref3[_i];
+            observer = this.observe(this.model, dependency, this.sync);
+            this.dependencies.push(observer);
+          }
+        }
+        if (this.view.preloadData) {
+          return this.sync();
+        }
+      });
+    };
+
     Binding.prototype.unbind = function() {
       var ai, args, fi, observer, _i, _len, _ref1, _ref2, _ref3, _ref4;
       if ((_ref1 = this.binder.unbind) != null) {
@@ -837,11 +880,16 @@
       this.type = type;
       this.unbind = __bind(this.unbind, this);
       this.isRenderedComponent = __bind(this.isRenderedComponent, this);
+      this.updateBinders = __bind(this.updateBinders, this);
+      this.bindAsync = __bind(this.bindAsync, this);
       this.bind = __bind(this.bind, this);
       this.insertContent = __bind(this.insertContent, this);
       this.buildComponentContent = __bind(this.buildComponentContent, this);
+      this.buildRuntimeComponentTemplateAsync = __bind(this.buildRuntimeComponentTemplateAsync, this);
       this.buildRuntimeComponentTemplate = __bind(this.buildRuntimeComponentTemplate, this);
+      this.buildComponentTemplateAsync = __bind(this.buildComponentTemplateAsync, this);
       this.buildComponentTemplate = __bind(this.buildComponentTemplate, this);
+      this.buildViewInstanceAsync = __bind(this.buildViewInstanceAsync, this);
       this.buildViewInstance = __bind(this.buildViewInstance, this);
       this.locals = __bind(this.locals, this);
       this.component = this.view.components[this.type];
@@ -885,6 +933,16 @@
       return viewInstance;
     };
 
+    ComponentBinding.prototype.buildViewInstanceAsync = function(element, model, options, parentView) {
+      var viewInstance;
+      viewInstance = new Rivets.View(element, model, options, parentView);
+      return viewInstance.bindAsync().then((function(_this) {
+        return function() {
+          return viewInstance;
+        };
+      })(this));
+    };
+
     ComponentBinding.prototype.buildComponentTemplate = function() {
       var componentTemplate, template;
       componentTemplate = document.createElement('div');
@@ -897,6 +955,20 @@
       return componentTemplate;
     };
 
+    ComponentBinding.prototype.buildComponentTemplateAsync = function() {
+      var componentTemplate, templatePromise;
+      componentTemplate = document.createElement('div');
+      templatePromise = this.component.template.call(this, true);
+      return templatePromise.then(function(template) {
+        if (template instanceof HTMLElement || template instanceof DocumentFragment) {
+          componentTemplate.appendChild(template);
+        } else {
+          componentTemplate.innerHTML = template;
+        }
+        return componentTemplate;
+      });
+    };
+
     ComponentBinding.prototype.buildRuntimeComponentTemplate = function(rootComponentName) {
       var componentTemplate;
       componentTemplate = this.buildComponentTemplate();
@@ -906,6 +978,17 @@
         };
       })(this));
       return componentTemplate;
+    };
+
+    ComponentBinding.prototype.buildRuntimeComponentTemplateAsync = function(rootComponentName) {
+      var componentTemplatePromise;
+      componentTemplatePromise = this.buildComponentTemplateAsync();
+      return componentTemplatePromise.then(function(componentTemplate) {
+        Array.prototype.slice.call(componentTemplate.querySelectorAll('*')).forEach((function(_this) {
+          return function(templateNode) {};
+        })(this), templateNode.setAttribute('runtime-rendering', true));
+        return componentTemplate;
+      });
     };
 
     ComponentBinding.prototype.buildComponentContent = function() {
@@ -972,8 +1055,15 @@
       return this.view;
     };
 
+    ComponentBinding.prototype.buildComponentViewAsync = function(el, model, options, parentView) {
+      if (!this.component.block) {
+        return this.buildViewInstanceAsync(el, model, options, parentView);
+      }
+      return Promise.resolve(this.view);
+    };
+
     ComponentBinding.prototype.bind = function() {
-      var attribute, binder, bindingRegExp, componentContent, componentTemplate, k, key, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _results;
+      var attribute, bindingRegExp, componentContent, componentTemplate, k, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
       if (this.componentView != null) {
         this.componentView.bind();
         if (this.templateView != null) {
@@ -1058,23 +1148,135 @@
             scope.ready(this.templateView ? this.templateView : {});
           }
         }
-        _ref8 = this.binders;
-        _results = [];
-        for (key in _ref8) {
-          binder = _ref8[key];
-          _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
-            return function(key, binder) {
-              return function() {
-                var _ref9;
-                if (typeof ((_ref9 = binder.observer) != null ? _ref9.value() : void 0) !== 'function') {
-                  return binder.publish();
+        return this.updateBinders(scope);
+      }
+    };
+
+    ComponentBinding.prototype.bindAsync = function() {
+      var attribute, bindingRegExp, componentTemplatePromise, componentViewPromise, k, option, options, propertyName, scope, v, _base, _i, _j, _k, _len, _len1, _len2, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
+      if (this.componentView != null) {
+        return this.componentView.bindAsync().then((function(_this) {
+          return function() {
+            if (_this.templateView != null) {
+              return _this.templateView.bindAsync();
+            }
+          };
+        })(this));
+      } else {
+        this.el._bound = true;
+        options = {};
+        _ref1 = Rivets.extensions;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          option = _ref1[_i];
+          options[option] = {};
+          if (this.component[option]) {
+            _ref2 = this.component[option];
+            for (k in _ref2) {
+              v = _ref2[k];
+              options[option][k] = v;
+            }
+          }
+          _ref3 = this.view[option];
+          for (k in _ref3) {
+            v = _ref3[k];
+            if ((_base = options[option])[k] == null) {
+              _base[k] = v;
+            }
+          }
+        }
+        _ref4 = Rivets.options;
+        for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
+          option = _ref4[_j];
+          options[option] = (_ref5 = this.component[option]) != null ? _ref5 : this.view[option];
+        }
+        bindingRegExp = this.view.bindingRegExp();
+        _ref6 = this.el.attributes || [];
+        for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
+          attribute = _ref6[_k];
+          if (!bindingRegExp.test(attribute.name) && attribute.value) {
+            propertyName = this.camelCase(attribute.name);
+            if (__indexOf.call((_ref7 = this.component["static"]) != null ? _ref7 : [], propertyName) >= 0) {
+              this["static"][propertyName] = attribute.value;
+            } else {
+              this.binders[propertyName] = attribute.value;
+            }
+          }
+        }
+        if (!this.bound) {
+          Object.keys(this.binders).forEach((function(_this) {
+            return function(key) {
+              var binder;
+              binder = {
+                routine: function(el, value) {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] = value : void 0;
+                },
+                getValue: function() {
+                  return typeof scope !== "undefined" && scope !== null ? scope[key] : void 0;
                 }
               };
+              return _this.binders[key] = _this.view.addBinding(null, binder, _this.binders[key]);
             };
-          })(this)).call(this, key, binder)));
+          })(this));
+          this.bound = true;
         }
-        return _results;
+        if (isProdEnv && this.isRenderedComponent()) {
+          scope = this.buildLocalScope();
+          componentViewPromise = this.buildComponentViewAsync(Array.prototype.slice.call(this.el.childNodes), scope, options, this.view);
+          return componentViewPromise.then((function(_this) {
+            return function(componentView) {
+              _this.componentView = componentView;
+              if (typeof scope.ready === "function") {
+                scope.ready(_this.componentView);
+              }
+              return _this.updateBinders(scope);
+            };
+          })(this));
+        } else {
+          if (isProdEnv) {
+            componentTemplatePromise = this.buildRuntimeComponentTemplateAsync();
+          } else {
+            componentTemplatePromise = this.buildComponentTemplateAsync();
+          }
+          return componentTemplatePromise.then((function(_this) {
+            return function(componentTemplate) {
+              var componentContent;
+              componentContent = _this.buildComponentContent();
+              componentViewPromise = _this.buildComponentViewAsync(componentContent, _this.view.models, options);
+              return componentViewPromise.then(function(componentView) {
+                _this.componentView = componentView;
+                _this.el.appendChild(componentTemplate);
+                scope = _this.buildLocalScope();
+                _this.templateView = _this.buildViewInstance(componentTemplate, scope, options);
+                _this.insertContent(componentTemplate, componentContent);
+                if (typeof scope.ready === "function") {
+                  scope.ready(_this.templateView ? _this.templateView : {});
+                }
+                return _this.updateBinders(scope);
+              });
+            };
+          })(this));
+        }
       }
+    };
+
+    ComponentBinding.prototype.updateBinders = function(scope) {
+      var binder, key, _ref1, _results;
+      _ref1 = this.binders;
+      _results = [];
+      for (key in _ref1) {
+        binder = _ref1[key];
+        _results.push(this.upstreamObservers[key] = this.observe(scope, key, ((function(_this) {
+          return function(key, binder) {
+            return function() {
+              var _ref2;
+              if (typeof ((_ref2 = binder.observer) != null ? _ref2.value() : void 0) !== 'function') {
+                return binder.publish();
+              }
+            };
+          };
+        })(this)).call(this, key, binder)));
+      }
+      return _results;
     };
 
     ComponentBinding.prototype.isRenderedComponent = function() {
