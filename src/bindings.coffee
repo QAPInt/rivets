@@ -18,9 +18,9 @@ class Rivets.Binding
     if typeof @type == 'object'
       @binder = @type
       return
-    
+
     @binder = @view.binders[@type]
-    
+
     unless @binder
       for identifier, value of @view.binders
         if identifier isnt '*' and identifier.indexOf('*') isnt -1
@@ -89,7 +89,7 @@ class Rivets.Binding
       @formattedValue value.call @model
     else
       @formattedValue value
-      
+
     @value = value
     @binder.routine?.call @, @el, value
 
@@ -138,6 +138,21 @@ class Rivets.Binding
         @dependencies.push observer
 
     @sync() if @view.preloadData
+
+  # Async: Subscribes to the model for changes at the specified keypath. Bi-directional
+  # routines will also listen for changes on the element to propagate them back
+  # to the model.
+  bindAsync: =>
+    @parseTarget()
+    promise = @binder.bindAsync?.call @, @el
+
+    promise.then () ->
+      if @model? and @options.dependencies?.length
+        for dependency in @options.dependencies
+          observer = @observe @model, dependency, @sync
+          @dependencies.push observer
+
+      @sync() if @view.preloadData
 
   # Unsubscribes from the model and the element.
   unbind: =>
@@ -209,10 +224,15 @@ class Rivets.ComponentBinding extends Rivets.Binding
     string.replace /-([a-z])/g, (grouped) ->
       grouped[1].toUpperCase()
 
-  buildViewInstance: (element, model, options, parentView) => 
+  buildViewInstance: (element, model, options, parentView) =>
     viewInstance = new Rivets.View(element, model, options, parentView)
     viewInstance.bind()
     viewInstance
+
+  buildViewInstanceAsync: (element, model, options, parentView) =>
+    viewInstance = new Rivets.View(element, model, options, parentView)
+    viewInstance.bindAsync().then () =>
+      viewInstance
 
   buildComponentTemplate: () =>
     componentTemplate = document.createElement 'div'
@@ -225,6 +245,18 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     componentTemplate
 
+  buildComponentTemplateAsync: () =>
+    componentTemplate = document.createElement 'div'
+    templatePromise = @component.template.call @, true
+
+    templatePromise.then (template) ->
+      if template instanceof HTMLElement or template instanceof DocumentFragment
+        componentTemplate.appendChild template
+      else
+        componentTemplate.innerHTML = template
+
+      componentTemplate
+
   buildRuntimeComponentTemplate: (rootComponentName) =>
     componentTemplate = @buildComponentTemplate()
 
@@ -234,6 +266,17 @@ class Rivets.ComponentBinding extends Rivets.Binding
       )
 
     componentTemplate
+
+  buildRuntimeComponentTemplateAsync: (rootComponentName) =>
+    componentTemplatePromise = @buildComponentTemplateAsync()
+
+    componentTemplatePromise.then (componentTemplate) ->
+      Array.prototype.slice.call(componentTemplate.querySelectorAll('*'))
+        .forEach((templateNode) =>
+        templateNode.setAttribute 'runtime-rendering', true
+      )
+
+      componentTemplate
 
   buildComponentContent: () =>
     componentContent = document.createDocumentFragment()
@@ -252,20 +295,20 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     fragment
 
-  insertTemplate: (componentTemplate) -> 
+  insertTemplate: (componentTemplate) ->
     while componentTemplate.firstChild
         @el.appendChild(componentTemplate.firstChild)
-    
+
     @el.removeChild(componentTemplate)
 
-  insertContent: (componentTemplate, componentContent) => 
+  insertContent: (componentTemplate, componentContent) =>
     contentNodes = Array.prototype.slice.call(componentTemplate.getElementsByTagName('content'), 0);
 
     contentNodes
-      .sort((content) -> 
+      .sort((content) ->
         content.attributes["select"] ? -1 : 1;
       )
-      .forEach((content) -> 
+      .forEach((content) ->
         selector = componentContent.querySelectorAll(content.getAttribute('select'))
 
         if selector.length > 0
@@ -292,6 +335,12 @@ class Rivets.ComponentBinding extends Rivets.Binding
 
     @view
 
+  buildComponentViewAsync: (el, model, options, parentView) ->
+    if !@component.block
+      return @buildViewInstanceAsync el, model, options, parentView
+
+    Promise.resolve @view
+
   # Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
   # map of models from the root view. Bind `@componentView` on subsequent calls.
   bind: =>
@@ -317,15 +366,15 @@ class Rivets.ComponentBinding extends Rivets.Binding
       for attribute in @el.attributes or []
         if (!bindingRegExp.test(attribute.name) && attribute.value)
           propertyName = @camelCase attribute.name
-          
+
           if propertyName in (@component.static ? [])
             @static[propertyName] = attribute.value
           else
             @binders[propertyName] = attribute.value
-      
+
       unless @bound
         Object.keys(@binders).forEach (key) =>
-          binder = 
+          binder =
             routine: (el, value) => scope?[key] = value
             getValue: () => scope?[key]
 
@@ -351,11 +400,80 @@ class Rivets.ComponentBinding extends Rivets.Binding
         @insertContent componentTemplate, componentContent
         scope.ready? if @templateView then @templateView else {}
 
-      for key, binder of @binders
-        @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
-          unless typeof binder.observer?.value() == 'function'
-            binder.publish()
-        ).call(@, key, binder)
+      @updateBinders(scope)
+
+  # Async: Intercepts `Rivets.Binding::bind` to build `@componentView` with a localized
+  # map of models from the root view. Bind `@componentView` on subsequent calls.
+  bindAsync: =>
+    if @componentView?
+      @componentView.bindAsync().then () =>
+        if @templateView?
+          @templateView.bindAsync()
+    else
+      @el._bound = true
+
+      options = {}
+
+      for option in Rivets.extensions
+        options[option] = {}
+        options[option][k] = v for k, v of @component[option] if @component[option]
+        options[option][k] ?= v for k, v of @view[option]
+
+      for option in Rivets.options
+        options[option] = @component[option] ? @view[option]
+
+      bindingRegExp = @view.bindingRegExp()
+
+      for attribute in @el.attributes or []
+        if (!bindingRegExp.test(attribute.name) && attribute.value)
+          propertyName = @camelCase attribute.name
+
+          if propertyName in (@component.static ? [])
+            @static[propertyName] = attribute.value
+          else
+            @binders[propertyName] = attribute.value
+
+      unless @bound
+        Object.keys(@binders).forEach (key) =>
+          binder =
+            routine: (el, value) => scope?[key] = value
+            getValue: () => scope?[key]
+
+          @binders[key] = @view.addBinding null, binder, @binders[key]
+
+        @bound = true
+
+      if isProdEnv and @isRenderedComponent()
+        scope = @buildLocalScope()
+        componentViewPromise = @buildComponentViewAsync Array.prototype.slice.call(@el.childNodes), scope, options, @view
+        componentViewPromise.then (componentView) =>
+          @componentView = componentView
+          scope.ready? @componentView
+          @updateBinders(scope)
+      else
+        if isProdEnv
+          componentTemplatePromise = @buildRuntimeComponentTemplateAsync()
+        else
+          componentTemplatePromise = @buildComponentTemplateAsync()
+
+        componentTemplatePromise.then (componentTemplate) =>
+          componentContent = @buildComponentContent()
+          componentViewPromise = @buildComponentViewAsync componentContent, @view.models, options
+          componentViewPromise.then (componentView) =>
+            @componentView = componentView
+            @el.appendChild componentTemplate
+            scope = @buildLocalScope()
+            @templateView = @buildViewInstance componentTemplate, scope, options
+            @insertContent componentTemplate, componentContent
+            scope.ready? if @templateView then @templateView else {}
+            @updateBinders(scope)
+
+  updateBinders: (scope) =>
+    for key, binder of @binders
+      @upstreamObservers[key] = @observe scope, key, ((key, binder) => =>
+        unless typeof binder.observer?.value() == 'function'
+          binder.publish()
+      ).call(@, key, binder)
 
   isRenderedComponent: =>
     not @el.hasAttribute 'runtime-rendering'
@@ -372,7 +490,7 @@ class Rivets.ComponentBinding extends Rivets.Binding
     if(not @component.block)
       @componentView?.unbind.call @
     @templateView?.unbind.call @
-    
+
 
 # Rivets.TextBinding
 # -----------------------

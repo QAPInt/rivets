@@ -45,13 +45,13 @@ class Rivets.View
     binding = new Rivets[binding] targetView, node, type, keypath, options
     @bindings.push(binding)
     binding
-  
+
   # Adds new binding to the existing view
   addBinding: (node, type, declaration) =>
     binding = @buildBinding('Binding', node, type, declaration)
     binding.bind()
     binding
-  
+
   # Parses the DOM tree and builds `Rivets.Binding` instances for every matched
   # binding declaration.
   build: =>
@@ -165,6 +165,10 @@ class Rivets.View
   # Binds all of the current bindings for this view.
   bind: =>
     binding.bind() for binding in @bindings
+
+  # Async: Binds all of the current bindings for this view.
+  bindAsync: =>
+    Promise.all(@bindings.map (binding) => binding.bindAsync())
 
   # Unbinds all of the current bindings for this view.
   unbind: =>
