@@ -806,23 +806,32 @@
     };
 
     Binding.prototype.bindAsync = function() {
-      var promise, _ref1;
+      var proceedBind, promise, _ref1;
       this.parseTarget();
       promise = (_ref1 = this.binder.bindAsync) != null ? _ref1.call(this, this.el) : void 0;
-      return promise.then(function() {
-        var dependency, observer, _i, _len, _ref2, _ref3;
-        if ((this.model != null) && ((_ref2 = this.options.dependencies) != null ? _ref2.length : void 0)) {
-          _ref3 = this.options.dependencies;
-          for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-            dependency = _ref3[_i];
-            observer = this.observe(this.model, dependency, this.sync);
-            this.dependencies.push(observer);
+      proceedBind = (function(_this) {
+        return function() {
+          var dependency, observer, _i, _len, _ref2, _ref3;
+          if ((_this.model != null) && ((_ref2 = _this.options.dependencies) != null ? _ref2.length : void 0)) {
+            _ref3 = _this.options.dependencies;
+            for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+              dependency = _ref3[_i];
+              observer = _this.observe(_this.model, dependency, _this.sync);
+              _this.dependencies.push(observer);
+            }
           }
-        }
-        if (this.view.preloadData) {
-          return this.sync();
-        }
-      });
+          if (_this.view.preloadData) {
+            return _this.sync();
+          }
+        };
+      })(this);
+      if (promise) {
+        return promise.then(function() {
+          return proceedBind();
+        });
+      } else {
+        return proceedBind();
+      }
     };
 
     Binding.prototype.unbind = function() {

@@ -146,13 +146,20 @@ class Rivets.Binding
     @parseTarget()
     promise = @binder.bindAsync?.call @, @el
 
-    promise.then () ->
+    proceedBind = () =>
       if @model? and @options.dependencies?.length
         for dependency in @options.dependencies
           observer = @observe @model, dependency, @sync
           @dependencies.push observer
 
       @sync() if @view.preloadData
+
+    if promise
+      promise.then () ->
+        proceedBind()
+    else
+      proceedBind()
+
 
   # Unsubscribes from the model and the element.
   unbind: =>
