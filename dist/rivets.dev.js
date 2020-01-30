@@ -1,5 +1,5 @@
 // Rivets.js
-// version: 1.0.9
+// version: 1.0.10
 // author: Michael Richards
 // license: MIT
 (function() {
@@ -1243,15 +1243,19 @@
               componentContent = _this.buildComponentContent();
               componentViewPromise = _this.buildComponentViewAsync(componentContent, _this.view.models, options);
               return componentViewPromise.then(function(componentView) {
+                var templateViewPromise;
                 _this.componentView = componentView;
                 _this.el.appendChild(componentTemplate);
                 scope = _this.buildLocalScope();
-                _this.templateView = _this.buildViewInstance(componentTemplate, scope, options);
-                _this.insertContent(componentTemplate, componentContent);
-                if (typeof scope.ready === "function") {
-                  scope.ready(_this.templateView ? _this.templateView : {});
-                }
-                return _this.updateBinders(scope);
+                templateViewPromise = _this.buildViewInstanceAsync(componentTemplate, scope, options);
+                return templateViewPromise.then(function(templateView) {
+                  _this.templateView = templateView;
+                  _this.insertContent(componentTemplate, componentContent);
+                  if (typeof scope.ready === "function") {
+                    scope.ready(_this.templateView ? _this.templateView : {});
+                  }
+                  return _this.updateBinders(scope);
+                });
               });
             };
           })(this));

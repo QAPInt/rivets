@@ -463,10 +463,13 @@ class Rivets.ComponentBinding extends Rivets.Binding
             @componentView = componentView
             @el.appendChild componentTemplate
             scope = @buildLocalScope()
-            @templateView = @buildViewInstance componentTemplate, scope, options
-            @insertContent componentTemplate, componentContent
-            scope.ready? if @templateView then @templateView else {}
-            @updateBinders(scope)
+            templateViewPromise = @buildViewInstanceAsync componentTemplate, scope, options
+
+            templateViewPromise.then (templateView) =>
+              @templateView = templateView
+              @insertContent componentTemplate, componentContent
+              scope.ready? if @templateView then @templateView else {}
+              @updateBinders(scope)
 
   updateBinders: (scope) =>
     for key, binder of @binders
